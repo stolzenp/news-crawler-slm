@@ -35,7 +35,7 @@ To perform dataset generation, model training, and evaluation, run the provided 
 #### **Dataset Generation**  
 Use the following command to generate a dataset:  
 ```bash
-python create_dataset.py --num_articles=<number_of_articles_per_fundus_publisher> --path=<saving_path_for_dataset>
+python crawl_articles.py --num_articles=<number_of_articles_per_fundus_publisher> --path=<saving_path_for_dataset>
 ```  
 
 #### **Model Fine-tuning [WIP]**  

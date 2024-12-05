@@ -1,0 +1,14 @@
+{
+  "model_training_settings": {
+    "model_name_or_path": "Qwen/Qwen2-0.5B",
+    "dataset_path": "/path/to/dataset.txt",
+    "output_dir": "/path/to/outputdir"
+  },
+  "data_extraction_settings": {
+    "use_cc_news_crawler": false,
+    "start_publisher_number": 1,
+    "max_articles": 1000,
+    "timeout": 1200,
+    "work_directory": "/path/to/workdir"
+  }
+}
