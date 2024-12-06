@@ -28,34 +28,34 @@ The primary goal of this project is to improve the adaptability of SLMs to vario
 
 ## **Usage**  
 
-To perform dataset generation, model training, and evaluation, run the provided scripts. Detailed commands and options are documented in the usage guide.  
+To perform dataset generation, model training, and evaluation, run the provided scripts in the project root. Commands are documented in this usage guide.  
 
 ### Example Commands  
 
 #### **Dataset Generation**  
 Use the following command to generate a dataset:  
 ```bash
-python crawl_articles.py --num_articles=<number_of_articles_per_fundus_publisher> --path=<saving_path_for_dataset>
+python -m data_extraction.crawl_articles
 ```  
 
 #### **Model Fine-tuning [WIP]**  
 To fine-tune a Small Language Model (SLM), execute:  
 ```bash
-python finetune_model.py --model=<small_language_model_name>
+python -m model_training.finetune_model
 ```
 
 #### **Model Evaluation [WIP]**  
 To evaluate a resulting model, execute:  
 ```bash
-python evaluate_model.py
+python -m model_training.evaluate_model
 ```  
 
 ## **Configuration [WIP]**
 To customize this project:
-1. Copy the `.env.example` file and rename it to `.env`.
+1. Open `config.json` file
 2. Configure any necessary parameters:
    ```env
-   MODEL_CHECKPOINT_PATH=<path_to_model_checkpoint>
+   "model_name_or_path": "<model_of_choice>"
    ```
 
 ## **Contributing**

@@ -1,41 +1,7 @@
-from dataclasses import dataclass, field
 import json
 from tqdm import tqdm
-from transformers import HfArgumentParser
 from fundus import PublisherCollection, Crawler, CCNewsCrawler
-
-# set dataclasses for argument parsing
-@dataclass
-class CrawlerArguments:
-    use_cc_news_crawler: bool = field(
-        metadata={
-            "help": "If set true the CC News Crawler will be used."
-        }
-    )
-    start_publisher_number: int = field(
-        metadata={
-            "help": "The publisher number to start crawling from."
-        }
-    )
-    max_articles: int = field(
-        metadata={
-            "help": "The maximum number of articles to crawl per publisher."
-        }
-    )
-    timeout: int = field(
-        metadata={
-            "help": "The number of seconds to wait for the next article."
-        }
-    )
-    work_directory: str = field(
-        metadata={
-            "help": "The directory where the crawler will store the crawled data."
-        }
-    )
-
-@dataclass
-class Config:
-    data_extraction_settings: CrawlerArguments
+from utils import get_args_from_config
 
 # function for creating datapoints
 def create_entry(html=None, plain_text=None, json_data=None, url=None, publisher_name=None, language=None):
@@ -49,14 +15,8 @@ def create_entry(html=None, plain_text=None, json_data=None, url=None, publisher
         "language": language
     }
 
-# set path to config file
-path_to_config = "../config.json"
-
 # get crawler arguments from config file
-parser = HfArgumentParser(Config)
-config = parser.parse_json_file(path_to_config, allow_extra_keys=True)[0]
-crawler_args = config.data_extraction_settings
-
+crawler_args = get_args_from_config("data_extraction_settings")
 
 # set meta variables
 work_directory = crawler_args["work_directory"]
@@ -112,7 +72,7 @@ for publisher in publishers:
             crawler = Crawler(publisher)
 
         # crawl articles for current publisher
-        for article in tqdm(crawler.crawl(max_articles=max_articles, timeout=2000), total=max_articles, desc="Retrieving Articles", miniters=1):
+        for article in tqdm(crawler.crawl(max_articles=max_articles, timeout=timeout), total=max_articles, desc="Retrieving Articles", miniters=1):
 
             # increase article counter
             j = j + 1
