@@ -1,5 +1,5 @@
 fundus~=0.4.6
 tqdm~=4.66.5
 datasets~=3.1.0
-torch~=2.4.1
-transformers~=4.45.1
+torch~=2.5.0
+transformers~=4.47.0
