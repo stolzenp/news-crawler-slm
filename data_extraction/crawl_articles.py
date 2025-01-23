@@ -1,4 +1,6 @@
 import json
+import os.path
+
 from tqdm import tqdm
 from fundus import PublisherCollection, Crawler, CCNewsCrawler
 from utils import get_args_from_config
@@ -49,18 +51,21 @@ for publisher in publishers:
         continue
 
     # check if current publisher was already completed previously
-    with open(finished_publisher_file, "r", encoding="utf-8") as h:
-        for line in h:
-            if line == f"{publisher.name}\n":
-                publisher_already_done = True
-                break
+    if os.path.isfile(finished_publisher_file):
+        with open(finished_publisher_file, "r", encoding="utf-8") as h:
+            for line in h:
+                if line == f"{publisher.name}\n":
+                    publisher_already_done = True
+                    break
 
     # skip publisher if already completed in previous crawler run
     if publisher_already_done:
         continue
 
     # create file for current publisher
-    with open(f"{work_directory}/{publisher.name.lower()}.txt", "w", encoding="utf-8") as f:
+    publisher_file = f"{work_directory}/{publisher.name.lower()}.txt"
+    os.makedirs(os.path.dirname(publisher_file), exist_ok=True)
+    with open(publisher_file, "w", encoding="utf-8") as f:
         if publisher.deprecated:
             continue
         print(f"{i}: {publisher}")
