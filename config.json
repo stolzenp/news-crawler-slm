@@ -4,7 +4,7 @@
     "start_publisher_number": 1,
     "max_articles": 1000,
     "timeout": 1200,
-    "work_directory": "/path/to/working_directory",
+    "work_directory": "/path/to/work_directory",
     "dataset_name": "dataset",
     "only_complete_publishers": true
   },
