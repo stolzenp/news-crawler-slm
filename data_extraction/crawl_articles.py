@@ -36,7 +36,7 @@ i = 0
 j = 0
 publisher_already_done = False
 
-# crawl 1000 articles per publisher and print
+# crawl max_articles per publisher and print
 for publisher in publishers:
 
     # increase publisher counter
