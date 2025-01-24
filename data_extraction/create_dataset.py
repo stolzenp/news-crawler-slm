@@ -76,4 +76,4 @@ else:
     if any_matches:
         print(f"All data from all crawled publishers was merged into '{output_file}'.")
     else:
-        print(f"No publisher files found in working directory '{directory}'.")
+        print(f"No publisher files found in work directory '{directory}'.")
