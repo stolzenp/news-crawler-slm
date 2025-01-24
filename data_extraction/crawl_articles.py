@@ -39,16 +39,19 @@ publisher_already_done = False
 # crawl 1000 articles per publisher and print
 for publisher in publishers:
 
-    # reset article counter and boolean for publisher completion
-    j = 0
-    publisher_already_done = False
-
     # increase publisher counter
     i = i + 1
 
     # skip publisher prior to start publisher
     if i < start_publisher_number:
         continue
+
+    # skip deprecated publishers
+    if publisher.deprecated:
+        continue
+
+    # reset boolean for publisher completion
+    publisher_already_done = False
 
     # check if current publisher was already completed previously
     if os.path.isfile(finished_publisher_file):
@@ -62,12 +65,19 @@ for publisher in publishers:
     if publisher_already_done:
         continue
 
-    # create file for current publisher
+    # set path for publisher file
     publisher_file = f"{work_directory}/{publisher.name.lower()}.txt"
+
+    # create directory if necessary
     os.makedirs(os.path.dirname(publisher_file), exist_ok=True)
+
+    # create file for current publisher
     with open(publisher_file, "w", encoding="utf-8") as f:
-        if publisher.deprecated:
-            continue
+
+        # reset article counter
+        j = 0
+
+        # log currently crawled publisher
         print(f"{i}: {publisher}")
 
         # set crawler type
