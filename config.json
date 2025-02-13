@@ -4,13 +4,19 @@
     "start_publisher_number": 1,
     "max_articles": 1000,
     "timeout": 1200,
-    "work_directory": "/path/to/work_directory",
-    "dataset_name": "dataset",
+    "work_directory": "/vol/tmp/stolzenp",
+    "dataset_name": "final_dataset",
     "only_complete_publishers": true
   },
   "model_training_settings": {
-    "model_name_or_path": "Qwen/Qwen2-0.5B",
-    "dataset_path": "/path/to/dataset/dataset.txt",
-    "output_dir": "/path/to/output_directory"
+    "model_name_or_path": "allenai/led-base-16384",
+    "target_dataset_directory": "/vol/tmp/stolzenp/training/dataset",
+    "split_dataset_directory": "/vol/tmp/stolzenp/training/split_dataset",
+    "target_column": "plain_text",
+    "tokenized_dataset_directory": "/vol/tmp/stolzenp/training/tokenized_dataset",
+    "training_split_size": 0.80,
+    "seed": 42,
+    "source_dataset_path": "/vol/tmp/stolzenp/final_dataset.txt",
+    "output_dir": "/vol/tmp/stolzenp/training/results"
   }
 }
