@@ -9,11 +9,11 @@
     "only_complete_publishers": true
   },
   "model_training_settings": {
-    "model_name_or_path": "allenai/led-base-16384",
+    "model_name_or_path": "/vol/tmp/stolzenp/training/qwen2.5-1.5b_24k+8k/results/plaintext/checkpoint-70458",
     "target_dataset_directory": "/vol/tmp/stolzenp/training/dataset",
-    "split_dataset_directory": "/vol/tmp/stolzenp/training/split_dataset",
+    "split_dataset_directory": "/vol/tmp/stolzenp/training/split_dataset_cleaned_filtered_24k",
     "target_column": "plain_text",
-    "tokenized_dataset_directory": "/vol/tmp/stolzenp/training/tokenized_dataset",
+    "tokenized_dataset_directory": "/vol/tmp/stolzenp/training/tokenized_qwen_dataset_cleaned_filtered_5k_in_512_out",
     "training_split_size": 0.80,
     "seed": 42,
     "source_dataset_path": "/vol/tmp/stolzenp/final_dataset.txt",

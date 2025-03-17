@@ -19,7 +19,7 @@ dataset = load_from_disk(dataset_dir)
 tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
 
 # define mapping function
-def preprocess_function(examples, max_input_length=16384, max_target_length=2048):
+def preprocess_function(examples, max_input_length=5000, max_target_length=512):
     inputs = tokenizer(
         examples["html"],
         max_length=max_input_length,
@@ -29,8 +29,8 @@ def preprocess_function(examples, max_input_length=16384, max_target_length=2048
     )
 
     # set global attention on first token (important for LED)
-    inputs["global_attention_mask"] = torch.zeros_like(inputs["input_ids"])
-    inputs["global_attention_mask"][:, 0] = 1  # global attention on first token
+    #inputs["global_attention_mask"] = torch.zeros_like(inputs["input_ids"])
+    #inputs["global_attention_mask"][:, 0] = 1  # global attention on first token
 
     with tokenizer.as_target_tokenizer():
         labels = tokenizer(

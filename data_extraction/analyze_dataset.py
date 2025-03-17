@@ -2,7 +2,7 @@ import json
 
 dataset = []
 
-with open("/vol/tmp/stolzenp/dataset.txt", "r", encoding="utf-8") as f:
+with open("/vol/tmp/stolzenp/final_dataset.txt", "r", encoding="utf-8") as f:
     for line in f:
         try:
             # Load each line as a JSON object
@@ -11,10 +11,14 @@ with open("/vol/tmp/stolzenp/dataset.txt", "r", encoding="utf-8") as f:
         except json.JSONDecodeError:
             print("Skipping malformed line:", line)
 
-language_counts = {}
+publishers = []
 for entry in dataset:
-    language = entry.get("language")
-    if language:
-        language_counts[language] = language_counts.get(language, 0) + 1
+    publisher = entry.get("publisher")
+    if publisher in publishers:
+        continue
+    else:
+        publishers.append(publisher)
 
-print("Language counts:", language_counts)
+publishers.sort()
+
+print("Publishers:", publishers)
