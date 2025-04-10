@@ -9,7 +9,7 @@
     "only_complete_publishers": true
   },
   "model_training_settings": {
-    "model_name_or_path": "/vol/tmp/stolzenp/training/qwen2.5-1.5b_24k+8k/results/plaintext/checkpoint-70458",
+    "model_name_or_path": "jinaai/ReaderLM-v2",
     "target_dataset_directory": "/vol/tmp/stolzenp/training/dataset",
     "split_dataset_directory": "/vol/tmp/stolzenp/training/split_dataset_cleaned_filtered_24k",
     "target_column": "plain_text",

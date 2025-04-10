@@ -38,5 +38,5 @@ Output:""", return_tensors="pt")
 
 FastLanguageModel.for_inference(model) # Enable native 2x faster inference
 text_streamer = TextStreamer(tokenizer)
-#_ = model.generate(**inputs, streamer = text_streamer, max_new_tokens = 8192)
+_ = model.generate(**inputs, streamer = text_streamer, max_new_tokens = 8192)
 print(test_set[0]["plain_text"])
