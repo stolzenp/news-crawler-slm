@@ -3,31 +3,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
 
-# Step 1: Extract the first token distribution inside {}
 token_counts = []
 
 with open('/vol/fob-vol4/mi17/stolzenp/news-crawler-slm/token_statistics_cleaned_html.txt', 'r') as f:
     content = f.read()
 
-    # Regular expression to match the first occurrence of a token distribution inside { ... }
-    pattern = r'\{([^}]+)\}'  # Match everything inside the first set of curly braces
+    # regular expression to match the first occurrence of a token distribution inside {}
+    pattern = r'\{([^}]+)\}'
     match = re.search(pattern, content)
 
     if match:
-        # Extract the token distribution string and split it into individual token:count pairs
+        # extract the token distribution string and split it into individual "token: count" pairs
         distribution_str = match.group(1)
 
-        # Process each token:count pair
-        pairs = distribution_str.split(',')  # Split by comma to get individual pairs
+        # process each "token: count" pair
+        pairs = distribution_str.split(',')
         for pair in pairs:
             token, count = pair.split(':')
             token = int(token.strip())
             count = int(count.strip())
 
-            # Add the token to the list as many times as indicated by the count
+            # add token to the list as many times as indicated by the count
             token_counts.extend([token] * count)
 
-# Step 2: Calculate mean and median
+# calculating mean and median
 mean = np.mean(token_counts)
 mean = float(mean)
 median = np.median(token_counts)

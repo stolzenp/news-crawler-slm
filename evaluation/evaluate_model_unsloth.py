@@ -13,7 +13,7 @@ checkpoint_path = "/vol/tmp/stolzenp/training/ReaderLM-v2_24k+8k_cl_loss/results
 print(checkpoint_path)
 model, tokenizer = FastLanguageModel.from_pretrained(
     model_name= checkpoint_path,
-    max_seq_length=32768,  # Adjust based on your dataset
+    max_seq_length=32768,
     dtype=None,
     load_in_4bit=True,
     device_map="cuda",
@@ -25,7 +25,6 @@ dataset_path = "/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filter
 dataset = load_from_disk(dataset_path)
 test_set = dataset["test"]
 
-# add prompt layout if bad results
 def compute_perplexity(text):
     """Computes perplexity."""
     tokens = tokenizer(text, return_tensors="pt").to("cuda")
@@ -38,7 +37,6 @@ def compute_perplexity(text):
         perplexity = torch.exp(loss).item()
 
     return perplexity
-
 
 prompt = """
 Input:
