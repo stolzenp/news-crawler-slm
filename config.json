@@ -11,12 +11,20 @@
   "model_training_settings": {
     "model_name_or_path": "jinaai/ReaderLM-v2",
     "target_dataset_directory": "/vol/tmp/stolzenp/training/dataset",
-    "split_dataset_directory": "/vol/tmp/stolzenp/training/split_dataset_cleaned_filtered_24k",
+    "split_dataset_directory": "/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filtered_24k",
     "target_column": "plain_text",
     "tokenized_dataset_directory": "/vol/tmp/stolzenp/training/tokenized_qwen_dataset_cleaned_filtered_5k_in_512_out",
     "training_split_size": 0.80,
     "seed": 42,
     "source_dataset_path": "/vol/tmp/stolzenp/final_dataset.txt",
-    "output_dir": "/vol/tmp/stolzenp/training/results"
+    "output_dir": "/vol/tmp/stolzenp/training/results",
+    "use_contrastive_loss": false
+  },
+  "evaluation_settings": {
+    "model_name_or_path": "/vol/tmp/stolzenp/training/ReaderLM-v2_24k+8k_cl_loss/results/plaintext/checkpoint-70458",
+    "sequence_length": 32768,
+    "dataset_path": "/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filtered_24k",
+    "target_column": "plaintext",
+    "base_output_dir": "/vol/tmp/stolzenp/results/ReaderLM-v2_finetuned_cl_loss"
   }
 }

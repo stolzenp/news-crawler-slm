@@ -2,24 +2,6 @@ from dataclasses import dataclass, field
 
 # dataclasses for argument parsing
 @dataclass
-class ModelArguments:
-    model_name_or_path: str = field(
-        metadata={
-            "help": "Path to pretrained model or model identifier from huggingface.co/models."
-        }
-    )
-    dataset_path: str = field(
-        metadata={
-            "help": "Path to the dataset to load."
-        }
-    )
-    output_dir: str = field(
-        metadata={
-            "help": "The output directory where the model predictions and checkpoints will be written."
-        }
-    )
-
-@dataclass
 class CrawlerArguments:
     use_cc_news_crawler: bool = field(
         metadata={
@@ -58,6 +40,33 @@ class CrawlerArguments:
     )
 
 @dataclass
+class ModelArguments:
+    model_name_or_path: str = field(
+        metadata={
+            "help": "Path to pretrained model or model identifier from huggingface.co/models."
+        }
+    )
+    dataset_path: str = field(
+        metadata={
+            "help": "Path to the dataset to load."
+        }
+    )
+    output_dir: str = field(
+        metadata={
+            "help": "The output directory where the model predictions and checkpoints will be written."
+        }
+    )
+
+@dataclass
+class EvaluationArguments:
+    target_column: str = field(
+        metadata={
+            "help": "The target column to evaluate on."
+        }
+    )
+
+@dataclass
 class Config:
-    model_training_settings: ModelArguments
     data_extraction_settings: CrawlerArguments
+    model_training_settings: ModelArguments
+    evaluation_settings: EvaluationArguments

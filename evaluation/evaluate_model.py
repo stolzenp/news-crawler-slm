@@ -11,44 +11,31 @@ from pyxdameraulevenshtein import damerau_levenshtein_distance
 import jellyfish
 from unsloth import FastLanguageModel
 
-from utils import get_args_from_config
+# prompt templates are defined in utils.py
+from utils import get_args_from_config, format_prompts
 
-# define prompts for perplexity and inference metrics evaluation
-PPL_PROMPT = "Input:\n{}\n\nOutput:\n{}"
-INF_PROMPT = "Input:\n{}\n\nOutput:\n"
-
-def formatting_prompts(examples, target_column, eos_token):
-    inputs = examples["html"]
-    outputs = examples[target_column]
-    return {
-        # prompts for perplexity evaluation (input and output)
-        "text_ppl": [PPL_PROMPT.format(i, o) + eos_token for i, o in zip(inputs, outputs)],
-        # prompts for inference (only input)
-        "text_inf": [INF_PROMPT.format(i) for i in inputs],
-    }
-
-
-def compute_perplexity(input_text, model, tokenizer):
+def compute_perplexity(input_text, model_instance, tokenizer_instance):
     """Computes perplexity."""
-    tokens = tokenizer(input_text, return_tensors="pt").to("cuda")
+
+    tokens = tokenizer_instance(input_text, return_tensors="pt").to("cuda")
     labels = tokens["input_ids"].clone()
 
     with torch.no_grad():
-        outputs = model(**tokens, labels=labels)
+        outputs = model_instance(**tokens, labels=labels)
     perplexity = torch.exp(outputs.loss).item()
 
     return perplexity
 
 
-def compute_inference_metrics(input_text, gold_output, model, tokenizer):
-    """Computes evaluation metrics score."""
+def compute_inference_metrics(input_text, gold_output, model_instance, tokenizer_instance):
+    """Computes scores of inference metrics: Rouge-L, Levenshtein, Damerau, Jaro-Winkler Similarity."""
 
-    tokens = tokenizer(input_text, return_tensors="pt").to("cuda")
+    tokens = tokenizer_instance(input_text, return_tensors="pt").to("cuda")
 
     with torch.no_grad():
-        output_ids = model.generate(**tokens, max_new_tokens=8192)
+        output_ids = model_instance.generate(**tokens, max_new_tokens=8192)
 
-    output = tokenizer.decode(output_ids[0][tokens["input_ids"].shape[1]:], skip_special_tokens=True)
+    output = tokenizer_instance.decode(output_ids[0][tokens["input_ids"].shape[1]:], skip_special_tokens=True)
 
     gold_output = json.dumps(gold_output)
 
@@ -73,13 +60,13 @@ def compute_inference_metrics(input_text, gold_output, model, tokenizer):
     return inf_metrics
 
 def main():
-    # get evaluation arguments from config file
+    # get evaluation arguments from the config file
     eval_args = get_args_from_config("evaluation_settings")
-    model_path = eval_args["model_path"]
+    model_path = eval_args["model_name_or_path"]
     sequence_length = eval_args["sequence_length"]
     dataset_path = eval_args["dataset_path"]
     target_column = eval_args["target_column"]
-    output_dir = eval_args["output_dir"]
+    output_dir = eval_args["base_output_dir"]
 
     # add parser arguments for quick
     parser = argparse.ArgumentParser(description="Evaluation metrics")
@@ -91,7 +78,6 @@ def main():
     # assign arguments to variables
     args = parser.parse_args()
     target = args.target
-    altered_type = args.target.replace("_", "")
     if args.full_eval:
         args.perplexity = args.inference = True
     elif not args.perplexity and not args.inference:
@@ -107,8 +93,6 @@ def main():
         target = target_column
 
     # load model and tokenizer
-    # checkpoint_path = f"/vol/tmp/stolzenp/training/ReaderLM-v2_24k+8k_cl_loss/results/{altered_type}/checkpoint-70458"
-    # checkpoint_path = "jinaai/ReaderLM-v2"
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=model_path,
         max_seq_length=sequence_length,
@@ -119,7 +103,6 @@ def main():
     FastLanguageModel.for_inference(model)  # enable Unsloth's native 2x faster inference
 
     # load test dataset
-    #dataset_path = "/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filtered_24k"
     dataset = load_from_disk(dataset_path)
     test_set = dataset["test"]
 
@@ -127,17 +110,27 @@ def main():
     eos_token = tokenizer.eos_token
 
     # add prompts for perplexity and inference metrics evaluation
-    test_set = test_set.map(lambda examples: formatting_prompts(examples, target, eos_token), batched=True)
+    test_set = test_set.map(
+        lambda examples: format_prompts(
+            examples, 
+            input_column="html", 
+            output_column=target, 
+            eos_token=eos_token, 
+            for_training=False,
+            compute_perplexity=args.perplexity,
+            compute_inference=args.inference
+        ), 
+        batched=True
+    )
 
-    # create results list
+    # create a list for results
     results = []
 
     # compute metrics for each test sample
     for index in tqdm(range(len(test_set)), total=len(test_set), desc="Processing samples"):
-
         sample = test_set[index]
 
-        # create result dictionary
+        # create a result dictionary
         result_dict = {
             "html": sample["html"],
             f"{target}_gold": sample[target],
@@ -145,30 +138,27 @@ def main():
 
         # compute perplexity
         if args.perplexity:
-            perplexity = compute_perplexity(sample["text_ppl"], model, tokenizer)
+            perplexity = compute_perplexity(sample["text_ppl"], model_instance=model, tokenizer_instance=tokenizer)
             result_dict["Perplexity"] = perplexity
 
         # generate output and compute inference metrics
         if args.inference:
-            inf_metrics = compute_inference_metrics(sample["text_inf"], sample[target], model, tokenizer)
+            inf_metrics = compute_inference_metrics(sample["text_inf"], sample[target], model_instance=model, tokenizer_instance=tokenizer)
             # update result_dict with all metrics
             result_dict.update(inf_metrics)
 
         results.append(result_dict)
 
-    # f"/vol/tmp/stolzenp/results/ReaderLM-v2_finetuned_cl_loss/{altered_type}/inference_metrics_shrinked_results.json"
-    # f"/vol/tmp/stolzenp/results/ReaderLM-v2_finetuned_cl_loss/{altered_type}/inference_metrics_means_shrinked.txt"
-
     filename_prefix = "all_metrics"
     if not args.perplexity:
         filename_prefix = "inference_metrics"
-    else:
+    elif not args.inference:
         filename_prefix = "perplexity"
 
-    output_file = f"{output_dir}/{altered_type}/{filename_prefix}_shrinked_results.json"
-    means_output_file = f"{output_dir}/{altered_type}/{filename_prefix}_means_shrinked.json"
+    output_file = f"{output_dir}/{target}/{filename_prefix}_results.json"
+    means_output_file = f"{output_dir}/{target}/{filename_prefix}_means.json"
 
-    # save results to JSON file
+    # save results to a JSON file
     with open(output_file, "w") as f:
         json.dump(results, f, indent=4)
 
