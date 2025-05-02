@@ -1,12 +1,22 @@
-from datasets import load_from_disk
+from datasets import load_from_disk, DatasetDict
 
-# Load dataset from local directory
-dataset = load_from_disk("/vol/tmp/stolzenp/training/dataset")
+# load dataset from local directory
+dataset = load_from_disk("/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filtered_24k")
 
-# Define Hugging Face repo ID
-repo_id = "stolzenp/fundus-93K"
+# set Hugging Face repo ID
+repo_id = "stolzenp/fundus-cleaned-filtered-62K"
 
-# Push to Hugging Face Hub
-dataset.push_to_hub(repo_id)
+# In case not all splits have the same features due to missing values
+# Extract the reference features from train split
+reference_features = dataset["train"].features
+
+# align features for all splits
+aligned_dataset = DatasetDict({
+    split: ds.cast(reference_features)
+    for split, ds in dataset.items()
+})
+
+# push to Hugging Face Hub
+aligned_dataset.push_to_hub(repo_id)
 
 print(f"Dataset uploaded to https://huggingface.co/datasets/{repo_id}")
