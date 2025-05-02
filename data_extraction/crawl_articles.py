@@ -6,11 +6,11 @@ from fundus import PublisherCollection, Crawler, CCNewsCrawler
 from utils import get_args_from_config
 
 # function for creating datapoints
-def create_entry(html=None, plain_text=None, json_data=None, url=None, publisher_name=None, language=None):
+def create_entry(html=None, plaintext=None, json_data=None, url=None, publisher_name=None, language=None):
     """Returns data in JSON format."""
     return {
         "html": html,
-        "plain_text": plain_text,
+        "plaintext": plaintext,
         "json": json_data,
         "url": url,
         "publisher": publisher_name,
