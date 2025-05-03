@@ -3,9 +3,9 @@ from dataclasses import dataclass, field
 # dataclasses for argument parsing
 @dataclass
 class CrawlerArguments:
-    use_cc_news_crawler: bool = field(
+    publishers_directory: str = field(
         metadata={
-            "help": "If set true the CC News Crawler will be used."
+            "help": "The directory where the crawler will store the crawled data."
         }
     )
     start_publisher_number: int = field(
@@ -20,12 +20,17 @@ class CrawlerArguments:
     )
     timeout: int = field(
         metadata={
-            "help": "The number of seconds to wait for the next article."
+            "help": "The number of seconds to wait for the next article to be crawled."
         }
     )
-    work_directory: str = field(
+    use_cc_news_crawler: bool = field(
         metadata={
-            "help": "The directory where the crawler will store the crawled data."
+            "help": "If set true the CC News Crawler will be used."
+        }
+    )
+    dataset_directory: str = field(
+        metadata={
+            "help": "The directory where the dataset will be stored."
         }
     )
     dataset_name: str = field(
@@ -35,7 +40,10 @@ class CrawlerArguments:
     )
     only_complete_publishers: bool = field(
         metadata={
-            "help": "If set to true, only publishers from which the maximum number of articles was crawled will be considered during dataset creation."
+            "help": (
+                "If set to true, only publishers from which the maximum number of articles "
+                "was crawled will be considered during dataset creation."
+            )
         }
     )
 

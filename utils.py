@@ -1,19 +1,20 @@
 import os
-from typing import Literal, Dict, List, Optional
+from typing import Literal, Dict, Optional
 from transformers import HfArgumentParser
 from data_structures import Config
 
 # define literal for possible argument categories
 ArgumentCategory = Literal["data_extraction_settings", "model_training_settings", "evaluation_settings"]
 
-# set path to config file
-path_to_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+# set the path to the config file
+PATH_TO_CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
 
-# function for accessing arguments of specific category
+# function for accessing arguments of a specific category
 def get_args_from_config(args: ArgumentCategory):
-    """Returns arguments of provided category from config file."""
+    """Returns arguments of a provided category from the config file."""
+
     parser = HfArgumentParser(Config)
-    config = parser.parse_json_file(path_to_config)[0]
+    config = parser.parse_json_file(PATH_TO_CONFIG)[0]
 
     # dynamically access different arguments categories in config
     if hasattr(config, args):
@@ -21,7 +22,7 @@ def get_args_from_config(args: ArgumentCategory):
     else:
         raise ValueError(f"Unknown argument category: {args}")
 
-# Common prompt templates
+# common prompt templates
 INPUT_OUTPUT_PROMPT = "Input:\n{}\n\nOutput:\n{}"
 INPUT_ONLY_PROMPT = "Input:\n{}\n\nOutput:\n"
 
@@ -47,11 +48,13 @@ def format_prompts(examples: Dict,
     Returns:
         Dictionary with formatted prompts
     """
-    inputs = examples[input_column]
 
     def create_input_output_texts(input_texts, output_texts, end_token):
         """Helper function to create formatted input-output prompts."""
+
         return [INPUT_OUTPUT_PROMPT.format(i, o) + end_token for i, o in zip(input_texts, output_texts)]
+
+    inputs = examples[input_column]
 
     if for_training:
         # For training, we need both input and output
@@ -60,6 +63,7 @@ def format_prompts(examples: Dict,
 
         outputs = examples[output_column]
         return {"text": create_input_output_texts(inputs, outputs, eos_token)}
+
     else:
         # For evaluation, compute only what's needed
         if output_column is None:
