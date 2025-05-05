@@ -78,6 +78,9 @@ parser.add_argument("-r", "--resume", type=str, default=None, help="Weights & Bi
 # parse arguments
 args = parser.parse_args()
 
+# create the output base directory if it does not exist
+os.makedirs(output_base_dir, exist_ok=True)
+
 # overwrite config value if argument passed
 if args.contrastive_loss:
     use_cl_loss = True
@@ -88,7 +91,7 @@ if args.target:
 if use_cl_loss:
     AutoModelForCausalLM.from_pretrained = custom_from_pretrained
 
-# resume training from a previous run if requested
+# get run id from wandb_run_ids.json if resume is requested
 run_id = None
 run_name = args.resume if args.resume else wandb_run_name
 if run_name:
@@ -203,26 +206,31 @@ def compute_metrics(eval_pred, compute_result, current_model):
         COUNTER_EVAL += 1
         return {}
 
-# create the run name
-timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-run_name = f"{model_name}-{target}{'-cl' if use_cl_loss else ''}-{timestamp}"
-
-# set up the logging directory
-logging_dir = f"{output_base_dir}/{run_name.replace('/', '-')}/logs"
-os.makedirs(logging_dir, exist_ok=True)
-
-# set up the checkpoint directory
-checkpoint_dir = f"{output_base_dir}/{run_name}/checkpoints"
-os.makedirs(checkpoint_dir, exist_ok=True)
-
-# initialize wandb logging
+# resume training from a previous run if requested, otherwise initialize a new run with wandb logging
 if run_id:
     wandb.init(project=wandb_project, id=run_id, resume="must")
 else:
+    # create the run name
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    run_name = f"{model_name}-{target}{'-cl' if use_cl_loss else ''}-{timestamp}"
+
+    # initialize wandb logging
     run = wandb.init(project=wandb_project, name=run_name, entity=wandb_entity)
     run_id = run.id
     with open(wandb_run_ids_file, "w") as f:
         json.dump({run_name: run_id}, f)
+
+# set up the run directory based on the run name, and the output base directory
+# replaces slashes with dashes to avoid unnecessary subdirectories
+run_directory = f"{output_base_dir}/{run_name.replace('/', '-')}"
+
+# set up the logging directory
+logging_dir = f"{run_directory}/logs"
+os.makedirs(logging_dir, exist_ok=True)
+
+# set up the checkpoint directory
+checkpoint_dir = f"{run_directory}/checkpoints"
+os.makedirs(checkpoint_dir, exist_ok=True)
 
 # set up the trainer
 trainer = CustomTrainer(
