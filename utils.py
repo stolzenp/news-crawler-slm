@@ -1,6 +1,8 @@
 import os
 from typing import Literal, Dict, Optional
+
 from transformers import HfArgumentParser
+
 from data_structures import Config
 
 # define literal for possible argument categories
@@ -57,7 +59,7 @@ def format_prompts(examples: Dict,
     inputs = examples[input_column]
 
     if for_training:
-        # For training, we need both input and output
+        # for training prompt, input and output are needed
         if output_column is None:
             raise ValueError("output_column must be provided when for_training=True")
 
@@ -65,12 +67,11 @@ def format_prompts(examples: Dict,
         return {"text": create_input_output_texts(inputs, outputs, eos_token)}
 
     else:
-        # For evaluation, compute only what's needed
+        # if no output column is provided, only the prompt for inference metrics is returned
         if output_column is None:
-            # For inference metrics only
             return {"text_inf": [INPUT_ONLY_PROMPT.format(i) for i in inputs]}
+        # if the output column is provided, flags are checked to determine returned prompts
         else:
-            # For evaluation with specified metrics
             result = {}
             outputs = examples[output_column]
 
