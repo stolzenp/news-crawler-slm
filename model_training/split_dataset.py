@@ -40,7 +40,7 @@ train_set = dataset.filter(lambda x: x['publisher'] in train_publishers)
 val_set = dataset.filter(lambda x: x['publisher'] in val_publishers)
 test_set = dataset.filter(lambda x: x['publisher'] in test_publishers)
 
-# create split dataset
+# create the split dataset
 split_dataset = DatasetDict({
     "train": train_set,
     "val": val_set,

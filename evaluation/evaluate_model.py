@@ -27,13 +27,13 @@ def compute_perplexity(input_text, model_instance, tokenizer_instance):
     return perplexity
 
 
-def compute_inference_metrics(input_text, gold_output, model_instance, tokenizer_instance):
+def compute_inference_metrics(input_text, max_generation_length, gold_output, model_instance, tokenizer_instance):
     """Computes scores of inference metrics: Rouge-L, Levenshtein, Damerau, Jaro-Winkler Similarity."""
 
     tokens = tokenizer_instance(input_text, return_tensors="pt").to("cuda")
 
     with torch.no_grad():
-        output_ids = model_instance.generate(**tokens, max_new_tokens=8192)
+        output_ids = model_instance.generate(**tokens, max_new_tokens=max_generation_length)
 
     output = tokenizer_instance.decode(output_ids[0][tokens["input_ids"].shape[1]:], skip_special_tokens=True)
 
@@ -64,11 +64,12 @@ def main():
     eval_args = get_args_from_config("evaluation_settings")
     model_path = eval_args["model_name_or_path"]
     sequence_length = eval_args["sequence_length"]
+    max_generation_length = eval_args["max_generation_length"]
     dataset_path = eval_args["dataset_path"]
     target_column = eval_args["target_column"]
     output_dir = eval_args["base_output_dir"]
 
-    # add parser arguments for quick
+    # add argument support for quick setting changes
     parser = argparse.ArgumentParser(description="Evaluation metrics")
     parser.add_argument("-t", "--target", choices=['plaintext', 'json'], help="Target: plaintext or json")
     parser.add_argument("-p", "--perplexity", action='store_true', help="Compute perplexity")
@@ -91,6 +92,11 @@ def main():
         if args.target and target_column:
             print("Target column specified in config and argument. Using argument value.")
         target = target_column
+
+    # raise an error if max_generation_length is too small
+    if max_generation_length < 1:
+        print("Invalid max_generation_length. Exiting.")
+        return
 
     # load model and tokenizer
     model, tokenizer = FastLanguageModel.from_pretrained(
@@ -143,7 +149,7 @@ def main():
 
         # generate output and compute inference metrics
         if args.inference:
-            inf_metrics = compute_inference_metrics(sample["text_inf"], sample[target], model_instance=model, tokenizer_instance=tokenizer)
+            inf_metrics = compute_inference_metrics(sample["text_inf"], max_generation_length, sample[target], model_instance=model, tokenizer_instance=tokenizer)
             # update result_dict with all metrics
             result_dict.update(inf_metrics)
 
