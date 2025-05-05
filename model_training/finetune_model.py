@@ -217,7 +217,7 @@ else:
     # initialize wandb logging
     run = wandb.init(project=wandb_project, name=run_name, entity=wandb_entity)
     run_id = run.id
-    with open(wandb_run_ids_file, "w") as f:
+    with open(wandb_run_ids_file, "a") as f:
         json.dump({run_name: run_id}, f)
 
 # set up the run directory based on the run name, and the output base directory
