@@ -30,7 +30,7 @@ class Qwen2ForCausalLMWithCL(Qwen2ForCausalLM):
         super().__init__(config)
         self.embed_dim = config.hidden_size
 
-        # Initialize weights and apply final processing
+        # initialize weights and apply final processing
         self.post_init()
 
     def compute_contrastive_loss(self, score_matrix, margin):
@@ -89,12 +89,6 @@ class Qwen2ForCausalLMWithCL(Qwen2ForCausalLM):
             cl_loss = self.compute_contrastive_loss(cosine_scores, margin)
             new_loss = outputs.loss + cl_loss
 
-            # test before runs
-            print(f"old_loss: {outputs.loss}")
-            print(f"cl_loss: {cl_loss}")
-            print(f"new_loss: {new_loss}")
-
-        # noinspection PyTypeChecker
         return modeling_outputs.CausalLMOutputWithPast(
             loss=new_loss,
             logits=outputs.logits,
@@ -109,6 +103,7 @@ def custom_from_pretrained(model_name, *args, **kwargs):
         return Qwen2ForCausalLMWithCL.from_pretrained(model_name, *args, **kwargs)
     return AutoModelForCausalLM.from_pretrained(model_name, *args, **kwargs)
 
+# custom SFTTrainer that also passes current_model to compute_metrics
 class CustomTrainer(SFTTrainer):
     def evaluation_loop(
             self,
@@ -245,6 +240,7 @@ class CustomTrainer(SFTTrainer):
                     batch_kwargs = {}
                     batch_kwargs["losses"] = losses if "loss" in args.include_for_metrics else None
                     batch_kwargs["inputs"] = inputs if "inputs" in args.include_for_metrics else None
+                    # adding current model to EvalPrediction
                     metrics = self.compute_metrics(
                         EvalPrediction(predictions=logits, label_ids=labels, **batch_kwargs),
                         compute_result=is_last_step, current_model=model
