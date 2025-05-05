@@ -48,6 +48,14 @@ class CrawlerArguments:
     )
 
 @dataclass
+class DataOpsArguments:
+    max_input_tokens: int = field(
+        metadata={
+            "help": "The threshold for the maximum number of input tokens."
+        }
+    )
+
+@dataclass
 class ModelArguments:
     model_name_or_path: str = field(
         metadata={
@@ -74,7 +82,17 @@ class EvaluationArguments:
     )
 
 @dataclass
+class StatisticsArguments:
+    output_dir: str = field(
+        metadata={
+            "help": "The output directory where the statistics will be written."
+        }
+    )
+
+@dataclass
 class Config:
     data_extraction_settings: CrawlerArguments
+    data_ops_settings: DataOpsArguments
     model_training_settings: ModelArguments
     evaluation_settings: EvaluationArguments
+    statistics_settings: StatisticsArguments

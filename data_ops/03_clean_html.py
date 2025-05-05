@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup, Comment
 split_dataset_cleaned_dir = "/vol/tmp/stolzenp/training/split_dataset_cleaned_plus"
 
 def clean_html(html):
-    """Removes <link>, <style>, <script> containing javascript, <svg>, <a>, <nav>, <img>, <ins> and <iframe> tags and their content, plus inline styles."""
+    """Removes <link>, <style>, <script> containing JavaScript, <svg>, <a>, <nav>, <img>, <ins> and <iframe> tags and their content, plus inline styles."""
     soup = BeautifulSoup(html, "html.parser")
     tags_to_remove = ["link", "style", "svg", "a", "nav", "img", "figure", "ins", "iframe", "tickaroo-liveblog", "astro-island"]
 
