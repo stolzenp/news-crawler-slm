@@ -1,10 +1,16 @@
 from datasets import load_from_disk, DatasetDict
 
-# load dataset from a local directory
-dataset = load_from_disk("/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filtered_24k")
+from common.utils import get_args_from_config
 
-# set Hugging Face repo ID
-repo_id = "stolzenp/fundus-cleaned-filtered-62K"
+# get dataset arguments from the config file
+dataset_args = get_args_from_config("data_extraction_settings")
+
+# set dataset variables
+dataset_path = dataset_args["dataset_directory"]
+hf_dataset_path = dataset_args["hf_dataset_path"]
+
+# load dataset from a local directory
+dataset = load_from_disk(dataset_path)
 
 # extract reference features from train split in case not all splits have the same features due to missing values
 reference_features = dataset["train"].features
@@ -15,7 +21,7 @@ aligned_dataset = DatasetDict({
     for split, ds in dataset.items()
 })
 
-# push to Hugging Face Hub
-aligned_dataset.push_to_hub(repo_id)
+# push dataset to Hugging Face Hub
+aligned_dataset.push_to_hub(hf_dataset_path)
 
-print(f"Dataset uploaded to https://huggingface.co/datasets/{repo_id}")
+print(f"Dataset uploaded to https://huggingface.co/datasets/{hf_dataset_path}")

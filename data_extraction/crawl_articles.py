@@ -4,7 +4,7 @@ import os
 from tqdm import tqdm
 from fundus import PublisherCollection, Crawler, CCNewsCrawler
 
-from utils import get_args_from_config
+from common.utils import get_args_from_config
 
 # function for creating datapoints
 def create_entry(html=None, plaintext=None, json_data=None, url=None, publisher_name=None, language=None):

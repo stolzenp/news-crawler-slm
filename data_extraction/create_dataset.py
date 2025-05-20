@@ -3,7 +3,7 @@ import os
 from tqdm import tqdm
 from fundus import PublisherCollection
 
-from utils import get_args_from_config
+from common.utils import get_args_from_config
 
 def main():
     # get crawler arguments from the config file

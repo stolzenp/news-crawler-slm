@@ -1,3 +1,4 @@
+from lxml.parser import result
 from unsloth import FastLanguageModel, is_bfloat16_supported # repositioned so unsloth does not complain
 from datetime import datetime
 import argparse
@@ -12,9 +13,8 @@ from transformers.trainer_utils import get_last_checkpoint
 
 # using custom hf code to enable contrastive loss and inference metrics evaluation
 from model_training.custom_hf_instances import CustomTrainer, custom_from_pretrained
-from evaluation.evaluate_model import compute_inference_metrics
-from utils import format_prompts
-from utils import get_args_from_config
+from evaluation.evaluate_model import compute_inference_metrics, compute_final_json_metrics
+from common.utils import format_prompts, get_args_from_config
 
 model_args = get_args_from_config("model_training_settings")
 
@@ -134,23 +134,15 @@ eos_token = tokenizer.eos_token
 # format prompts for training and evaluation using the utility function
 dataset = dataset.map(
     lambda examples: format_prompts(
-        examples, 
+        examples,
         input_column=input_column,
-        output_column=target, 
-        eos_token=eos_token, 
+        output_column=target,
+        eos_token=eos_token,
         for_training=True
-    ), 
+    ),
     batched=True
 )
 dataset["val"] = dataset["val"].map(
-    lambda examples: format_prompts(
-        examples,
-        input_column=input_column,
-        for_training=False
-    ),
-    batched=True,
-)
-dataset["test"] = dataset["test"].map(
     lambda examples: format_prompts(
         examples,
         input_column=input_column,
@@ -164,9 +156,21 @@ class MetricAccumulator:
     def __init__(self):
         self.perplexity = 0
         self.rouge_l = 0
-        self.levenstein = 0
+        self.bleu = 0
+        self.meteor = 0
+        self.levenshtein = 0
         self.damerau = 0
         self.jaro_winkler = 0
+        self.body_rouge_l = 0
+        self.body_bleu = 0
+        self.body_meteor = 0
+        self.body_levenshtein = 0
+        self.body_damerau = 0
+        self.body_jaro_winkler = 0
+        self.tp = 0
+        self.fp = 0
+        self.fn = 0
+        self.valid_json_count = 0
         self.num_samples = 0
 
     def add(self, loss, inf_model, sample):
@@ -176,20 +180,62 @@ class MetricAccumulator:
         self.perplexity += math.exp(loss.item())
 
         # inference metrics
-        inf_metrics = compute_inference_metrics(sample["text_inf"], max_generation_length, sample[target], inf_model, tokenizer)
+        inf_metrics = compute_inference_metrics(sample["text_inf"], max_generation_length, target, sample[target], inf_model, tokenizer)
         self.rouge_l += inf_metrics["Rouge-L"]
-        self.levenstein += inf_metrics["Levenshtein"]
+        self.bleu += inf_metrics["BLEU"]
+        self.meteor += inf_metrics["METEOR"]
+        self.levenshtein += inf_metrics["Levenshtein"]
         self.damerau += inf_metrics["Damerau"]
         self.jaro_winkler += inf_metrics["Jaro-Winkler"]
 
+        if target == "json":
+            self.body_rouge_l += inf_metrics["body_Rouge-L"]
+            self.body_bleu += inf_metrics["body_BLEU"]
+            self.body_meteor += inf_metrics["body_METEOR"]
+            self.body_levenshtein += inf_metrics["body_Levenshtein"]
+            self.body_damerau += inf_metrics["body_Damerau"]
+            self.body_jaro_winkler += inf_metrics["body_Jaro-Winkler"]
+            self.tp += inf_metrics["TP"]
+            self.fp += inf_metrics["FP"]
+            self.fn += inf_metrics["FN"]
+            self.valid_json_count += inf_metrics["valid_json"]
+
     def compute(self):
-        return {
+
+        result = {
             "Perplexity": self.perplexity / self.num_samples,
             "Rouge-L": self.rouge_l / self.num_samples,
-            "Levenshtein": self.levenstein / self.num_samples,
+            "BLEU": self.bleu / self.num_samples,
+            "METEOR": self.meteor / self.num_samples,
+            "Levenshtein": self.levenshtein / self.num_samples,
             "Damerau": self.damerau / self.num_samples,
             "Jaro-Winkler": self.jaro_winkler / self.num_samples,
         }
+
+        if target == "json":
+
+            json_scores = {
+                "TP": self.tp,
+                "FP": self.fp,
+                "FN": self.fn,
+                "valid_json": self.valid_json_count,
+            }
+
+            final_json_scores = compute_final_json_metrics(json_scores, self.num_samples)
+
+            json_results = {
+                "body_Rouge-L": self.body_rouge_l / self.valid_json_count,
+                "body_BLEU": self.body_bleu / self.valid_json_count,
+                "body_METEOR": self.body_meteor / self.valid_json_count,
+                "body_Levenshtein": self.body_levenshtein / self.valid_json_count,
+                "body_Damerau": self.body_damerau / self.valid_json_count,
+                "body_Jaro-Winkler": self.body_jaro_winkler / self.valid_json_count,
+                **final_json_scores,
+            }
+
+            result.update(json_results)
+
+        return result
 
 # helpers for compute metrics
 accumulator = MetricAccumulator()
@@ -209,6 +255,10 @@ def compute_metrics(eval_pred, compute_result, current_model):
 # resume training from a previous run if requested, otherwise initialize a new run with wandb logging
 if run_id:
     wandb.init(project=wandb_project, id=run_id, resume="must")
+
+    # do not evaluate at the beginning if resuming training
+    eval_on_start = False
+
 else:
     # create the run name
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -231,7 +281,7 @@ else:
     # add the current run id to the file
     run_ids[run_name] = run_id
     with open(wandb_run_ids_file, "w") as f:
-        json.dump(run_ids, f, indent=4)
+        json.dump(run_ids, f, ensure_ascii=False, indent=4)
 
 # set up the run directory based on the run name, and the output base directory
 # replaces slashes with dashes to avoid unnecessary subdirectories
@@ -285,11 +335,9 @@ trainer = CustomTrainer(
     ),
 )
 
-# training and final evaluation test set
+# training from start or checkpoint
 last_checkpoint = get_last_checkpoint(checkpoint_dir)
 if last_checkpoint is not None:
     trainer.train(resume_from_checkpoint=last_checkpoint)
 else:
     trainer.train()
-results = trainer.evaluate(dataset["test"])
-print("Final Evaluation:", results)

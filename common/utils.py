@@ -1,15 +1,16 @@
 import os
 from typing import Literal, Dict, Optional
+from pathlib import Path
 
 from transformers import HfArgumentParser
 
-from data_structures import Config
+from common.data_structures import Config
 
 # define literal for possible argument categories
 ArgumentCategory = Literal["data_extraction_settings", "data_ops_settings", "model_training_settings", "evaluation_settings", "statistics_settings"]
 
 # set the path to the config file
-PATH_TO_CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+PATH_TO_CONFIG = Path(__file__).resolve().parent.parent / "config.json"
 
 # function for accessing arguments of a specific category
 def get_args_from_config(args: ArgumentCategory):

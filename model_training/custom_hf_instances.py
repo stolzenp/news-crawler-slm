@@ -64,13 +64,38 @@ class Qwen2ForCausalLMWithCL(Qwen2ForCausalLM):
             return_dict: Optional[bool] = None,
             cache_position: Optional[torch.LongTensor] = None,
             num_logits_to_keep: int = 0,
-            # we set 0.5 as default to avoid also subclassing trainer
+            # we set 0.5 as default
             margin: float = 0.5, # Su et al. achieved best results with this value in their paper
             **loss_kwargs,
     ) -> Union[Tuple, modeling_outputs.CausalLMOutputWithPast]:
 
         bsz, seqlen = input_ids.size()
-        outputs = super().forward(input_ids, attention_mask=attention_mask, labels=labels, **loss_kwargs, output_hidden_states=True)
+
+        # still calculate the hidden states for contrastive loss during evaluation
+        # usual output_hidden_states=False in evaluation
+        if labels is not None:
+            output_hidden_states = True
+        else:
+            output_hidden_states = False
+
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        outputs = super().forward(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            labels=labels,
+            position_ids=position_ids,
+            past_key_values=past_key_values,
+            inputs_embeds=inputs_embeds,
+            use_cache=use_cache,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+            cache_position=cache_position,
+            num_logits_to_keep=num_logits_to_keep,
+            **loss_kwargs,
+        )
 
         if outputs.loss is None:
             # skip the contrastive loss calculation if the model returns no loss

@@ -1,12 +1,12 @@
 import json
 import os
 from datasets import Dataset
-from utils import get_args_from_config
+from common.utils import get_args_from_config
 
-model_args = get_args_from_config("model_training_settings")
-
-dataset_path = model_args["source_dataset_path"]
-output_dir = model_args["target_dataset_directory"]
+# assign arguments to variables
+data_args = get_args_from_config("data_ops_settings")
+dataset_path = data_args["source_dataset_path"]
+output_dir = data_args["target_dataset_directory"]
 
 # reading the .txt dataset file and parse the JSON entries
 data = []
@@ -25,6 +25,6 @@ for entry in data:
 # converting the dictionary of lists into a Hugging Face Dataset
 dataset = Dataset.from_dict(columns)
 
+# save Hugging Face Dataset and create directories if needed
 os.makedirs(output_dir, exist_ok=True)
-
 dataset.save_to_disk(output_dir)

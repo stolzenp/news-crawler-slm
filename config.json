@@ -7,12 +7,17 @@
     "use_cc_news_crawler": false,
     "dataset_directory": "/vol/tmp/stolzenp",
     "dataset_name": "final_dataset",
-    "only_complete_publishers": true
+    "only_complete_publishers": true,
+    "huggingface_dataset_path": "username/dataset-name"
   },
-  "model_training_settings": {
-    "tokenized_dataset_directory": "/vol/tmp/stolzenp/training/tokenized_qwen_dataset_cleaned_filtered_5k_in_512_out",
+  "data_ops_settings":{
     "source_dataset_path": "/vol/tmp/stolzenp/final_dataset.txt",
     "target_dataset_directory": "/vol/tmp/stolzenp/training/dataset",
+    "dataset_dir": "/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filtered_24k",
+    "base_output_dir": "/vol/tmp/stolzenp/data",
+    "columns": ["html","plaintext"]
+  },
+  "model_training_settings": {
     "training_split_size": 0.80,
     "split_dataset_directory": "/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filtered_24k",
     "model_name_or_path": "Qwen/Qwen2.5-1.5B",
@@ -63,6 +68,19 @@
     "max_generation_length": 8192,
     "dataset_path": "/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filtered_24k",
     "target_column": "plaintext",
-    "base_output_dir": "/vol/tmp/stolzenp/results/ReaderLM-v2_finetuned_cl_loss"
+    "base_output_dir": "/vol/tmp/stolzenp/results/ReaderLM-v2_24k+8k",
+    "raw_metrics_file": "all_metrics_results.json",
+    "huggingface_model_path": "username/model-name"
+  },
+  "statistics_settings": {
+    "output_dir": "vol/tmp/stolzenp/statistics/shrinked_split_dataset_cleaned_filtered_24k",
+    "dataset_directory": "/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filtered_24k",
+    "token_stats_file": "token_statistics_cleaned_html.txt",
+    "dataset_stats_file": "samples_per_split.txt",
+    "language_stats_file": "language_statistics_24k.txt",
+    "max_token_limit": 16438,
+    "columns": ["html", "plaintext", "json"],
+    "distribution_analysis_file": "sample_count_exceeding_16k",
+    "max_tokens_file": "max_tokens.txt"
   }
 }

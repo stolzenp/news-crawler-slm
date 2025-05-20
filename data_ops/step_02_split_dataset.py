@@ -1,7 +1,7 @@
 import random
 import os
 from datasets import DatasetDict, load_from_disk
-from utils import get_args_from_config
+from common.utils import get_args_from_config
 
 # get config arguments
 model_args = get_args_from_config("model_training_settings")
@@ -47,6 +47,6 @@ split_dataset = DatasetDict({
     "test": test_set,
 })
 
+# save split dataset and create directories if needed
 os.makedirs(split_dataset_dir, exist_ok=True)
-
 split_dataset.save_to_disk(split_dataset_dir)
