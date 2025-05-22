@@ -13,9 +13,19 @@
   "data_ops_settings":{
     "source_dataset_path": "/vol/tmp/stolzenp/final_dataset.txt",
     "target_dataset_directory": "/vol/tmp/stolzenp/training/dataset",
-    "dataset_dir": "/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filtered_24k",
+    "split_dataset_directory": "/vol/tmp/stolzenp/training/split_dataset",
+    "clean_dataset_directory": "/vol/tmp/stolzenp/training/split_dataset_cleaned",
+    "filtered_dataset_directory": "/vol/tmp/stolzenp/training/split_dataset_cleaned_filtered_24k_8k",
+    "shrinked_dataset_directory": "/vol/tmp/stolzenp/training/split_dataset_cleaned_filtered_shrinked_24k_8k",
+    "samples_per_publisher": 10,
+    "html_token_threshold": 24000,
+    "target_token_threshold": 8000,
+    "token_stats_file": "vol/tmp/stolzenp/statistics/shrinked_split_dataset_cleaned_filtered_24k/token_statistics_cleaned_html.txt",
+    "dataset_directory": "/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filtered_24k",
     "base_output_dir": "/vol/tmp/stolzenp/data",
-    "columns": ["html","plaintext"]
+    "columns": ["json"],
+    "split": "val",
+    "sample_id": 1
   },
   "model_training_settings": {
     "training_split_size": 0.80,
@@ -63,14 +73,20 @@
     "wandb_run_name": null
   },
   "evaluation_settings": {
-    "model_name_or_path": "/vol/tmp/stolzenp/training/ReaderLM-v2_24k+8k_cl_loss/results/plaintext/checkpoint-70458",
+    "model_name_or_path": "/vol/tmp/stolzenp/training/Qwen2.5-1.5B_24k+8k/Qwen-Qwen2.5-1.5B-json-2025-05-05_21-31-26/checkpoints/checkpoint-62000",
     "sequence_length": 32768,
     "max_generation_length": 8192,
     "dataset_path": "/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filtered_24k",
-    "target_column": "plaintext",
-    "base_output_dir": "/vol/tmp/stolzenp/results/ReaderLM-v2_24k+8k",
+    "split": "val",
+    "run_all_metrics": true,
+    "target_column": "json",
+    "base_output_dir": "/vol/tmp/stolzenp/results/Qwen2.5-1.5B_24k+8k/Qwen-Qwen2.5-1.5B-json-2025-05-05_21-31-26/checkpoint-62000",
     "raw_metrics_file": "all_metrics_results.json",
-    "huggingface_model_path": "username/model-name"
+    "huggingface_model_path": "username/model-name",
+    "log_to_wandb": true,
+    "wandb_project": "Qwen2.5-1.5B-eval",
+    "wandb_entity": "stolzenp-humboldt-universitaet-zu-berlin",
+    "wandb_run_name": "validation-json-62000"
   },
   "statistics_settings": {
     "output_dir": "vol/tmp/stolzenp/statistics/shrinked_split_dataset_cleaned_filtered_24k",

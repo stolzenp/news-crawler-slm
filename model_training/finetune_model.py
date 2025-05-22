@@ -1,4 +1,3 @@
-from lxml.parser import result
 from unsloth import FastLanguageModel, is_bfloat16_supported # repositioned so unsloth does not complain
 from datetime import datetime
 import argparse

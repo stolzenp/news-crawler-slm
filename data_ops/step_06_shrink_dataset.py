@@ -2,11 +2,14 @@ from datasets import load_from_disk
 from datasets import DatasetDict, Dataset
 import os
 
-# Function to limit each publisher to at most 50 samples
-def limit_samples_per_publisher(dataset, max_samples=50):
+from common.utils import get_args_from_config
+
+def limit_samples_per_publisher(current_dataset, max_samples=50):
+    """Limit the number of samples per publisher to a specified maximum."""
+
     grouped = {}
 
-    for sample in dataset:
+    for sample in current_dataset:
         publisher = sample["publisher"]
         if publisher not in grouped:
             grouped[publisher] = []
@@ -18,31 +21,38 @@ def limit_samples_per_publisher(dataset, max_samples=50):
 
     return Dataset.from_list(new_data)
 
-# Define thresholds
-samples_per_publisher = 10
+if __name__ == "__main__":
+    data_args = get_args_from_config("data_ops_settings")
+    filtered_dataset_dir = data_args["filtered_dataset_directory"]
+    shrinked_dataset_dir = data_args["shrinked_dataset_directory"]
+    samples_per_publisher = data_args["samples_per_publisher"]
 
-dataset_path = "/vol/tmp/stolzenp/training/split_dataset_cleaned_filtered_24k"
-dataset = load_from_disk(dataset_path)
+    # load dataset
+    dataset = load_from_disk(filtered_dataset_dir)
 
-# Print splits and sizes
-for split, data in dataset.items():
-    print(f"Split: {split}, Size: {len(data)}")
+    # print splits and sizes of dataset
+    for split, data in dataset.items():
+        print("Split sizes before limiting:\n")
+        print(f"Split: {split}, Size: {len(data)}\n")
 
-shrinked_split_dataset_cleaned_filtered_dir = "/vol/tmp/stolzenp/training/shrinked_split_dataset_cleaned_filtered_24k"
-shrinked_dataset = {}
+    # initialize dictionary for shrinked dictionary
+    shrinked_dataset = {}
 
-for split in dataset.keys():
-    if split == "train":
-        shrinked_dataset[split] = dataset[split]
-        continue
-    shrinked_dataset[split] = limit_samples_per_publisher(dataset[split], samples_per_publisher)
+    # shrink every split except 'train'
+    for split in dataset.keys():
+        if split == "train":
+            shrinked_dataset[split] = dataset[split]
+            continue
+        shrinked_dataset[split] = limit_samples_per_publisher(dataset[split], samples_per_publisher)
 
-shrinked_dataset = DatasetDict(shrinked_dataset)
+    # turn dictionary into dataset
+    shrinked_dataset = DatasetDict(shrinked_dataset)
 
-# Print splits and sizes
-for split, data in shrinked_dataset.items():
-    print(f"Split: {split}, Size: {len(data)}")
+    # print splits and sizes of shrinked dataset
+    for split, data in shrinked_dataset.items():
+        print("Split sizes after limiting:\n")
+        print(f"Split: {split}, Size: {len(data)}")
 
-# Save filtered dataset
-os.makedirs(shrinked_split_dataset_cleaned_filtered_dir, exist_ok=True)
-shrinked_dataset.save_to_disk(shrinked_split_dataset_cleaned_filtered_dir)
+    # save shrinked dataset
+    os.makedirs(shrinked_dataset_dir, exist_ok=True)
+    shrinked_dataset.save_to_disk(shrinked_dataset_dir)

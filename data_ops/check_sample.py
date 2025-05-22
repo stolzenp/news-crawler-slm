@@ -15,7 +15,7 @@ def check_sample(dataset_directory, dataset_split, split_columns, index, output_
     sample_file = f"{output_directory}/{dataset_name}/{dataset_split}/{index}.json"
 
     # get relevant sample columns
-    sample = relevant_dataset[split_columns][index]
+    sample = relevant_dataset[dataset_split][index]
     filtered_sample = {key: sample[key] for key in split_columns if key in sample}
 
     # save to file and create directories if necessary
@@ -28,7 +28,7 @@ def check_sample(dataset_directory, dataset_split, split_columns, index, output_
 
 if __name__ == "__main__":
     # get data ops arguments from the config file
-    data_args = get_args_from_config("model_training_settings")
+    data_args = get_args_from_config("data_ops_settings")
     dataset_dir = data_args["dataset_directory"]
     split = data_args["split"]
     sample_id = data_args["sample_id"]
@@ -37,9 +37,9 @@ if __name__ == "__main__":
 
     # support command line arguments for quick checks
     parser = argparse.ArgumentParser(description="Check sample in dataset")
-    parser.add_argument("--dataset_dir", type=str, required=True, help="Dataset directory (expects splits)")
-    parser.add_argument("--split", type=str, required=True, help="Split to check (e.g., train, val, test)")
-    parser.add_argument("--sample_id", type=int, required=True, help="Sample ID to check")
+    parser.add_argument("--dataset_dir", type=str, help="Dataset directory (expects splits)")
+    parser.add_argument("--split", type=str, help="Split to check (e.g., train, val, test)")
+    parser.add_argument("--sample_id", type=int, help="Sample ID to check")
     parser.add_argument("--columns", nargs="+", type=str, help="Columns to check (all if not specified)")
 
     # parse command line arguments
@@ -87,4 +87,4 @@ if __name__ == "__main__":
                 raise ValueError(f"Invalid column: {column}")
 
     # check the specified sample
-    check_sample(dataset_dir, split, columns, output_dir)
+    check_sample(dataset_dir, split, columns, sample_id, output_dir)
