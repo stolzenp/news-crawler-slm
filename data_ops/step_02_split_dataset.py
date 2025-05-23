@@ -1,16 +1,17 @@
 import random
 import os
 from datasets import DatasetDict, load_from_disk
+
 from common.utils import get_args_from_config
 
 # get config arguments
-model_args = get_args_from_config("model_training_settings")
+data_args = get_args_from_config("data_ops_settings")
 
 # assign relevant arguments
-dataset_dir = model_args["target_dataset_directory"]
-split_dataset_dir =  model_args["split_dataset_directory"]
-training_split_size = model_args["training_split_size"]
-seed = model_args["seed"]
+dataset_dir = data_args["target_dataset_directory"]
+split_dataset_dir =  data_args["split_dataset_directory"]
+training_split_size = data_args["training_split_size"]
+seed = data_args["seed"]
 
 # load dataset
 dataset = load_from_disk(dataset_dir)

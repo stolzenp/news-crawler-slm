@@ -375,6 +375,28 @@ def evaluate_model(
 
     return results, mean_metrics
 
+def save_results_and_means(results, mean_metrics, output_dir, filename_prefix="all_metrics"):
+    """Saves results and mean metrics to a JSON file and a text file."""
+
+    # create directories if needed
+    os.makedirs(output_dir, exist_ok=True)
+
+    output_file = f"{output_dir}/{filename_prefix}_results.json"
+    means_output_file = f"{output_dir}/{filename_prefix}_means.txt"
+
+    # save results to a JSON file
+    with open(output_file, "w") as f:
+        json.dump(results, f, ensure_ascii=False, indent=4)
+    print(f"Inference metrics results saved to {output_file}")
+
+    # save means to a text file
+    with open(means_output_file, "w") as f:
+        for metric_name, mean in mean_metrics.items():
+            message = f"{metric_name}: {mean}\n"
+            f.write(message)
+            print(message)
+    print(f"Mean values saved to {means_output_file}")
+
 def main():
     # get evaluation arguments from the config file
     eval_args = get_args_from_config("evaluation_settings")
@@ -454,24 +476,8 @@ def main():
     if split and split in splits:
         output_dir = f"{output_dir}/{split}"
 
-    # create directories if needed
-    os.makedirs(output_dir, exist_ok=True)
-
-    output_file = f"{output_dir}/{filename_prefix}_results.json"
-    means_output_file = f"{output_dir}/{filename_prefix}_means.txt"
-
-    # save results to a JSON file
-    with open(output_file, "w") as f:
-        json.dump(results, f, ensure_ascii=False, indent=4)
-    print(f"Inference metrics results saved to {output_file}")
-
-    # save means to a text file
-    with open(means_output_file, "w") as f:
-        for metric_name, mean in mean_metrics.items():
-            message = f"{metric_name}: {mean}\n"
-            f.write(message)
-            print(message)
-    print(f"Mean values saved to {means_output_file}")
+    # save results and mean metrics to a JSON file and a text file
+    save_results_and_means(results, mean_metrics, output_dir, filename_prefix)
 
 if __name__ == "__main__":
     main()

@@ -63,6 +63,7 @@ metric_for_best_model = model_args["metric_for_best_model"]
 greater_is_better = model_args["greater_is_better"]
 
 # wandb settings
+enable_wandb = model_args["enable_wandb"]
 wandb_project = model_args["wandb_project"]
 wandb_entity = model_args["wandb_entity"]
 wandb_run_name = model_args["wandb_run_name"]
@@ -93,7 +94,7 @@ if use_cl_loss:
 # get run id from wandb_run_ids.json if resume is requested
 run_id = None
 run_name = args.resume if args.resume else wandb_run_name
-if run_name:
+if run_name and enable_wandb:
     with open(wandb_run_ids_file, "r") as f:
         run_ids = json.load(f)
         if run_name in run_ids:
@@ -188,16 +189,18 @@ class MetricAccumulator:
         self.jaro_winkler += inf_metrics["Jaro-Winkler"]
 
         if target == "json":
-            self.body_rouge_l += inf_metrics["body_Rouge-L"]
-            self.body_bleu += inf_metrics["body_BLEU"]
-            self.body_meteor += inf_metrics["body_METEOR"]
-            self.body_levenshtein += inf_metrics["body_Levenshtein"]
-            self.body_damerau += inf_metrics["body_Damerau"]
-            self.body_jaro_winkler += inf_metrics["body_Jaro-Winkler"]
-            self.tp += inf_metrics["TP"]
-            self.fp += inf_metrics["FP"]
-            self.fn += inf_metrics["FN"]
             self.valid_json_count += inf_metrics["valid_json"]
+
+            if inf_metrics["valid_json"] == 1:
+                self.body_rouge_l += inf_metrics["body_Rouge-L"]
+                self.body_bleu += inf_metrics["body_BLEU"]
+                self.body_meteor += inf_metrics["body_METEOR"]
+                self.body_levenshtein += inf_metrics["body_Levenshtein"]
+                self.body_damerau += inf_metrics["body_Damerau"]
+                self.body_jaro_winkler += inf_metrics["body_Jaro-Winkler"]
+                self.tp += inf_metrics["TP"]
+                self.fp += inf_metrics["FP"]
+                self.fn += inf_metrics["FN"]
 
     def compute(self):
 
@@ -212,6 +215,11 @@ class MetricAccumulator:
         }
 
         if target == "json":
+
+            # handle case where no valid JSON was generated in evaluation
+            if self.valid_json_count == 0:
+                result["valid_json_count"] = 0
+                return result
 
             json_scores = {
                 "TP": self.tp,
@@ -263,24 +271,25 @@ else:
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     run_name = f"{model_name}-{target}{'-cl' if use_cl_loss else ''}-{timestamp}"
 
-    # initialize wandb logging
-    run = wandb.init(project=wandb_project, name=run_name, entity=wandb_entity)
-    run_id = run.id
+    if enable_wandb:
+        # initialize wandb logging
+        run = wandb.init(project=wandb_project, name=run_name, entity=wandb_entity)
+        run_id = run.id
 
-    # get previous run ids
-    if os.path.exists(wandb_run_ids_file):
-        with open(wandb_run_ids_file, "r") as f:
-            try:
-                run_ids = json.load(f)
-            except json.JSONDecodeError:
-                run_ids = {}  # handles corrupted or empty file
-    else:
-        run_ids = {}
+        # get previous run ids
+        if os.path.exists(wandb_run_ids_file):
+            with open(wandb_run_ids_file, "r") as f:
+                try:
+                    run_ids = json.load(f)
+                except json.JSONDecodeError:
+                    run_ids = {}  # handles corrupted or empty file
+        else:
+            run_ids = {}
 
-    # add the current run id to the file
-    run_ids[run_name] = run_id
-    with open(wandb_run_ids_file, "w") as f:
-        json.dump(run_ids, f, ensure_ascii=False, indent=4)
+        # add the current run id to the file
+        run_ids[run_name] = run_id
+        with open(wandb_run_ids_file, "w") as f:
+            json.dump(run_ids, f, ensure_ascii=False, indent=4)
 
 # set up the run directory based on the run name, and the output base directory
 # replaces slashes with dashes to avoid unnecessary subdirectories

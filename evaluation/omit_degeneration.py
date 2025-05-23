@@ -4,21 +4,8 @@ import os
 
 from common.utils import get_args_from_config
 
-def exclude_degeneration_results(input_path, output_file=None, mean_output=None):
+def exclude_degeneration_results(input_path, output_path, mean_output_path):
     """Filters out degeneration results from metrics results."""
-    dir_path = os.path.dirname(input_path)
-    filename = os.path.basename(input_path)
-    prefix = "nodegen"
-
-    # set output paths
-    if output_file is None:
-        output_file = f"{prefix}_{filename}"
-    output_file = f"{dir_path}/{output_file}"
-
-    if mean_output is None:
-        mean_name = filename.replace('results.json', 'means.txt')
-        mean_output = f"{prefix}_{mean_name}"
-    mean_output = f"{dir_path}/{mean_output}"
 
     with open(input_path, "r", encoding="utf-8") as f:
         data = json.load(f) # results are in JSON format
@@ -44,14 +31,14 @@ def exclude_degeneration_results(input_path, output_file=None, mean_output=None)
         }
 
         # save new mean values
-        with open(mean_output, "w", encoding="utf-8") as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             print("Mean values for filtered results:\n")
             for metric, mean_value in means.items():
                 message = f"{metric} mean: {mean_value}\n"
                 f.write(message)
                 print(message)
 
-        print(f"New mean values saved to {mean_output}\n")
+        print(f"New mean values saved to {mean_output_path}\n")
 
     else:
         print("No elements remain after filtering.")
@@ -62,15 +49,10 @@ if __name__ == "__main__":
     raw_metrics_file = eval_args["raw_metrics_file"]
     target = eval_args["target_column"]
     output_dir = eval_args["base_output_dir"]
-    nodegen_metrics_file = eval_args["nodegen_metrics_file"]
-    nodegen_mean_values_file = eval_args["nodegen_mean_values_file"]
 
     # support arguments to enable quick setting change in CLI
     parser = argparse.ArgumentParser(description="Filter out degeneration results")
     parser.add_argument( "-i", "--input", type=str, help="Metric scores file (.json)")
-    parser.add_argument( "-t", "--target", choices=['plaintext', 'json'], help="Target: plaintext or json")
-    parser.add_argument( "-o", "--output", type=str, help="No degeneration results file (.json)")
-    parser.add_argument( "-m", "--mean_output", type=str, help="No degeneration mean values file (.txt)")
 
     # assign arguments to variables
     args = parser.parse_args()
@@ -88,21 +70,14 @@ if __name__ == "__main__":
     if args.target is not None:
         target = args.target
 
-    if args.output is None and nodegen_metrics_file is None:
-        print("No output file specified. Exiting.")
-        exit()
-    elif args.output is not None:
-        nodegen_metrics_file = args.output
-
-    if args.mean_output is None and nodegen_mean_values_file is None:
-        print("No mean output file specified. Exiting.")
-        exit()
-    elif args.mean_output is not None:
-        nodegen_mean_values_file = args.mean_output
-
     # set the input file path
-    input_file = f"{output_dir}/{target}/{raw_metrics_file}"
+    input_file = f"{output_dir}/{raw_metrics_file}"
+
+    # set output paths
+    prefix = "nodegen"
+    output_file = f"{output_dir}/{prefix}_{raw_metrics_file}"
+    output_means_file = output_file.replace('results.json', 'means.txt')
 
     # filter out degeneration results
-    exclude_degeneration_results(input_file, nodegen_metrics_file, nodegen_mean_values_file)
+    exclude_degeneration_results(input_file, output_file, output_means_file)
 

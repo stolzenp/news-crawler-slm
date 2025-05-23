@@ -12,10 +12,12 @@ from compute_statistics.tokens.plot_token_distribution import plot_token_distrib
 
 def get_token_counts(samples, tokenizer):
     """Tokenize and count tokens for a list of samples."""
+
     return [len(tokenizer.tokenize(entry)) for entry in tqdm(samples, desc="Tokenizing", ncols=80)]
 
 def get_token_statistics(dataset, model_tokenizer, columns_to_process, output_file):
     """Compute and save token statistics on specific columns for a given dataset and tokenizer."""
+
     column_token_counts = {column: [] for column in columns_to_process}
 
     with open(output_file, "w") as f:
