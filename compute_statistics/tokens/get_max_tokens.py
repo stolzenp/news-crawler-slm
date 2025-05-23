@@ -2,6 +2,7 @@ import re
 
 from common.utils import get_args_from_config
 
+
 def get_max_tokens_for_column(file_path, column_name):
     """Extracts max token count and sample for a specific column from the statistics file."""
 
@@ -17,7 +18,7 @@ def get_max_tokens_for_column(file_path, column_name):
                 continue
 
             # break loop if not in the target section anymore
-            if in_target_section and not "Token Count:" in line:
+            if in_target_section and "Token Count:" not in line:
                 break
 
             # iterate over samples
@@ -31,20 +32,13 @@ def get_max_tokens_for_column(file_path, column_name):
                     if token_count > max_token_count:
                         # reset the list if a new max is found
                         max_token_count = token_count
-                        max_token_entries = [{
-                            "token_count": token_count,
-                            "split": split,
-                            "position": position
-                        }]
+                        max_token_entries = [{"token_count": token_count, "split": split, "position": position}]
                     elif token_count == max_token_count:
                         # add to existing list if same token count
-                        max_token_entries.append({
-                            "token_count": token_count,
-                            "split": split,
-                            "position": position
-                        })
+                        max_token_entries.append({"token_count": token_count, "split": split, "position": position})
 
     return max_token_entries
+
 
 if __name__ == "__main__":
     # get args from the config file
@@ -59,7 +53,7 @@ if __name__ == "__main__":
     max_tokens_file = f"{output_dir}/{max_tokens_file}"
 
     with open(max_tokens_file, "w") as f:
-        f.write(f"Maximum token length samples: \n\n")
+        f.write("Maximum token length samples: \n\n")
 
         for column in columns:
             # get max tokens for the current column

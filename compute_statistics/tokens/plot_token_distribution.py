@@ -1,26 +1,28 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.ticker import FuncFormatter
 
 from common.utils import get_args_from_config
 from compute_statistics.tokens.count_samples_over_token_limit import get_token_counts_for_column
 
+
 def format_number(x):
     """Format numbers for display purposes."""
-    return f'{x:,.0f}'
+    return f"{x:,.0f}"
+
 
 def plot_token_distribution(token_counts, column_name, mean_value, median_value, output_file):
     """Plot and save histogram of the given token distribution."""
     plt.figure(figsize=(10, 6))
 
-    plt.hist(token_counts, bins=90, edgecolor='black', alpha=0.7, color="skyblue")
+    plt.hist(token_counts, bins=90, edgecolor="black", alpha=0.7, color="skyblue")
 
-    plt.axvline(mean, color='red', linestyle='dashed', linewidth=2, label=f"Mean: {format_number(mean_value)}")
-    plt.axvline(median, color='green', linestyle='dashed', linewidth=2, label=f"Median: {format_number(median_value)}")
+    plt.axvline(mean, color="red", linestyle="dashed", linewidth=2, label=f"Mean: {format_number(mean_value)}")
+    plt.axvline(median, color="green", linestyle="dashed", linewidth=2, label=f"Median: {format_number(median_value)}")
 
     plt.xticks(rotation=45)
 
-    formatter = FuncFormatter(lambda x, _: f'{x:,.0f}')
+    formatter = FuncFormatter(lambda x, _: f"{x:,.0f}")
     plt.gca().xaxis.set_major_formatter(formatter)
     plt.gca().yaxis.set_major_formatter(formatter)
 
@@ -32,6 +34,7 @@ def plot_token_distribution(token_counts, column_name, mean_value, median_value,
 
     plt.savefig(output_file)
     plt.close()
+
 
 if __name__ == "__main__":
     # get args from the config file

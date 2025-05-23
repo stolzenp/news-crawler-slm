@@ -1,10 +1,11 @@
 import json
 import os
 
+from fundus import CCNewsCrawler, Crawler, PublisherCollection
 from tqdm import tqdm
-from fundus import PublisherCollection, Crawler, CCNewsCrawler
 
 from common.utils import get_args_from_config
+
 
 # function for creating datapoints
 def create_entry(html=None, plaintext=None, json_data=None, url=None, publisher_name=None, language=None):
@@ -16,8 +17,9 @@ def create_entry(html=None, plaintext=None, json_data=None, url=None, publisher_
         "json": json_data,
         "url": url,
         "publisher": publisher_name,
-        "language": language
+        "language": language,
     }
+
 
 def main():
     # get crawler arguments from the config file
@@ -88,7 +90,12 @@ def main():
                 crawler = Crawler(publisher)
 
             # crawl articles for the current publisher
-            for article in tqdm(crawler.crawl(max_articles=max_articles, timeout=timeout), total=max_articles, desc="Retrieving Articles", miniters=1):
+            for article in tqdm(
+                crawler.crawl(max_articles=max_articles, timeout=timeout),
+                total=max_articles,
+                desc="Retrieving Articles",
+                miniters=1,
+            ):
                 # increase article counter
                 j = j + 1
 
@@ -99,7 +106,8 @@ def main():
                     article.to_json(),
                     article.html.requested_url,
                     article.publisher,
-                    article.lang)
+                    article.lang,
+                )
 
                 # add the entry as a JSON string to the file
                 f.write(json.dumps(entry) + "\n")
@@ -108,6 +116,7 @@ def main():
                 if j == max_articles:
                     with open(finished_publisher_file, "a", encoding="utf-8") as g:
                         g.write(f"{publisher.name}\n")
+
 
 if __name__ == "__main__":
     main()

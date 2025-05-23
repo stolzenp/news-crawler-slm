@@ -1,0 +1,11 @@
+[tool.black]
+line-length = 120
+target-version = ["py310"]
+exclude = '''
+.*/unsloth_compiled_cache/.*$
+'''
+
+[tool.ruff]
+line-length = 120
+extend-select = ["I", "E", "F", "W", "B"]  # isort + pyflakes + some flake8 + bugbear
+exclude = ["build", "dist", ".venv", "unsloth_compiled_cache"]

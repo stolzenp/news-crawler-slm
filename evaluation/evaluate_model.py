@@ -1,21 +1,23 @@
-from unsloth import FastLanguageModel # repositioned so unsloth does not complain
-import os
+import argparse
 import ast
 import json
-import argparse
-import numpy as np
-from tqdm import tqdm
+import os
 
-import torch
-import wandb
-from datasets import load_from_disk
 import evaluate
-import Levenshtein
-from pyxdameraulevenshtein import damerau_levenshtein_distance
 import jellyfish
+import Levenshtein
+import numpy as np
+import torch
+from datasets import load_from_disk
+from pyxdameraulevenshtein import damerau_levenshtein_distance
+from tqdm import tqdm
+from unsloth import FastLanguageModel  # repositioned so unsloth does not complain
+
+import wandb
 
 # prompt templates are defined in utils.py
-from common.utils import get_args_from_config, format_prompts
+from common.utils import format_prompts, get_args_from_config
+
 
 def compute_perplexity(input_text, model_instance, tokenizer_instance):
     """Computes perplexity."""
@@ -29,6 +31,7 @@ def compute_perplexity(input_text, model_instance, tokenizer_instance):
 
     return perplexity
 
+
 def safe_transform_to_json(pred_str):
     """Checks if the predicted string is valid JSON and returns the parsed dictionary if valid."""
 
@@ -36,6 +39,7 @@ def safe_transform_to_json(pred_str):
         return ast.literal_eval(pred_str)
     except (SyntaxError, ValueError):
         return None
+
 
 def get_key_sets(pred_keys, gold_keys):
     """Returns sets of extra keys, missing keys and common keys between two key sets."""
@@ -45,6 +49,7 @@ def get_key_sets(pred_keys, gold_keys):
     common = pred_keys & gold_keys
 
     return extra, missing, common
+
 
 def collect_unique_keys_and_types(data, prefix="", result=None):
     """Collects unique keys and types from a nested dictionary."""
@@ -70,6 +75,7 @@ def collect_unique_keys_and_types(data, prefix="", result=None):
 
     return result
 
+
 def extract_all_text(data):
     """Extracts all text from a nested dictionary."""
 
@@ -86,19 +92,18 @@ def extract_all_text(data):
 
     return " ".join(t for t in texts if t)  # join strings
 
+
 def calculate_text_similarity_metrics(gold_text, pred_text):
     """Computes text similarity metrics: Rouge-L, BLEU, METEOR, Levenshtein, Damerau, Jaro-Winkler Similarity."""
 
+    rouge = evaluate.load("rouge")
+    rouge_l = rouge.compute(predictions=[pred_text], references=[gold_text])["rougeL"]
 
+    bleu = evaluate.load("bleu")
+    bleu_score = bleu.compute(predictions=[pred_text], references=[gold_text])["bleu"]
 
-    rouge = evaluate.load('rouge')
-    rouge_l = rouge.compute(predictions=[pred_text], references=[gold_text])['rougeL']
-
-    bleu = evaluate.load('bleu')
-    bleu_score = bleu.compute(predictions=[pred_text], references=[gold_text])['bleu']
-
-    meteor = evaluate.load('meteor')
-    meteor_score = meteor.compute(predictions=[pred_text], references=[gold_text])['meteor']
+    meteor = evaluate.load("meteor")
+    meteor_score = meteor.compute(predictions=[pred_text], references=[gold_text])["meteor"]
 
     levenshtein = Levenshtein.distance(pred_text, gold_text)
     normalized_levenshtein = levenshtein / max(len(pred_text), len(gold_text))
@@ -113,21 +118,20 @@ def calculate_text_similarity_metrics(gold_text, pred_text):
         "METEOR": meteor_score,
         "Levenshtein": normalized_levenshtein,
         "Damerau": damerau,
-        "Jaro-Winkler": jaro_winkler
+        "Jaro-Winkler": jaro_winkler,
     }
 
 
 def evaluate_json(prediction, gold_data):
-    """Validates JSON structure, collects True Positives (TP), False Positives (FP) and False Negatives (FN) and computes text similarity metrics for body field."""
+    """Validates JSON structure, collects True Positives (TP), False Positives (FP) and False Negatives (FN)
+    and computes text similarity metrics for body field."""
 
     # check if the predicted JSON serializable dictionary is valid
     valid_json = safe_transform_to_json(prediction)
 
     # stop extra evaluation if JSON is invalid
     if valid_json is None:
-        return {
-            "valid_json": 0
-        }
+        return {"valid_json": 0}
 
     # we exclude True Negatives (TN) in our scenario since usually many fields are None
     field_scores = {
@@ -220,6 +224,7 @@ def evaluate_json(prediction, gold_data):
 
     return field_scores
 
+
 def compute_final_json_metrics(results, sample_amount):
     """Computes final JSON evaluation metrics: Precision, Recall, F1 Score, Valid-JSON rate."""
 
@@ -228,22 +233,21 @@ def compute_final_json_metrics(results, sample_amount):
     f1_score = 2 * precision * recall / (precision + recall)
     valid_json_rate = results["valid_json"] / sample_amount
 
-    return {
-        "Precision": precision,
-        "Recall": recall,
-        "F1-Score": f1_score,
-        "Valid-JSON Rate": valid_json_rate
-    }
+    return {"Precision": precision, "Recall": recall, "F1-Score": f1_score, "Valid-JSON Rate": valid_json_rate}
 
-def compute_inference_metrics(input_text, max_generation_length, target_column, gold_output, model_instance, tokenizer_instance):
-    """Computes scores of inference metrics: Rouge-L, BLEU, METEOR, Levenshtein, Damerau, Jaro-Winkler Similarity. If the target column is JSON, it also computes JSON evaluation metrics."""
+
+def compute_inference_metrics(
+    input_text, max_generation_length, target_column, gold_output, model_instance, tokenizer_instance
+):
+    """Computes scores of inference metrics: Rouge-L, BLEU, METEOR, Levenshtein, Damerau, Jaro-Winkler Similarity.
+    If the target column is JSON, it also computes JSON evaluation metrics."""
 
     tokens = tokenizer_instance(input_text, return_tensors="pt").to("cuda")
 
     with torch.no_grad():
         output_ids = model_instance.generate(**tokens, max_new_tokens=max_generation_length)
 
-    output = tokenizer_instance.decode(output_ids[0][tokens["input_ids"].shape[1]:], skip_special_tokens=True)
+    output = tokenizer_instance.decode(output_ids[0][tokens["input_ids"].shape[1] :], skip_special_tokens=True)
 
     # handle extra JSON evaluation
     json_specific_metrics = {}
@@ -267,16 +271,17 @@ def compute_inference_metrics(input_text, max_generation_length, target_column, 
 
     return inf_metrics
 
+
 def evaluate_model(
-        dataset,
-        model,
-        tokenizer,
-        target_column,
-        max_generation_length,
-        compute_ppl=False,
-        compute_inf=False,
-        log_to_wandb=False,
-        wandb_step=0,
+    dataset,
+    model,
+    tokenizer,
+    target_column,
+    max_generation_length,
+    compute_ppl=False,
+    compute_inf=False,
+    log_to_wandb=False,
+    wandb_step=0,
 ):
     """Evaluates a model on a dataset and saves results to a JSON file and mean scores to a text file."""
 
@@ -294,9 +299,9 @@ def evaluate_model(
             eos_token=eos_token,
             for_training=False,
             compute_perplexity=compute_ppl,
-            compute_inference=compute_inf
+            compute_inference=compute_inf,
         ),
-        batched=True
+        batched=True,
     )
 
     # create a list for results
@@ -310,23 +315,22 @@ def evaluate_model(
     # compute metrics for each test sample
     for sample in tqdm(dataset, desc="Evaluating"):
         # create a result dictionary
-        result = {
-            "html": sample["html"],
-            f"{target_column}_gold": sample[target_column]
-        }
+        result = {"html": sample["html"], f"{target_column}_gold": sample[target_column]}
 
         # compute perplexity
         if compute_ppl:
-            ppl = compute_perplexity(
-                sample["text_ppl"], model_instance=model, tokenizer_instance=tokenizer
-            )
+            ppl = compute_perplexity(sample["text_ppl"], model_instance=model, tokenizer_instance=tokenizer)
             result["Perplexity"] = ppl
 
         # generate output and compute inference metrics
         if compute_inf:
             inf_metrics = compute_inference_metrics(
-                sample["text_inf"], max_generation_length, target_column,
-                sample[target_column], model_instance=model, tokenizer_instance=tokenizer
+                sample["text_inf"],
+                max_generation_length,
+                target_column,
+                sample[target_column],
+                model_instance=model,
+                tokenizer_instance=tokenizer,
             )
             # update result_dict with all metrics
             result.update(inf_metrics)
@@ -375,6 +379,7 @@ def evaluate_model(
 
     return results, mean_metrics
 
+
 def save_results_and_means(results, mean_metrics, output_dir, filename_prefix="all_metrics"):
     """Saves results and mean metrics to a JSON file and a text file."""
 
@@ -397,6 +402,7 @@ def save_results_and_means(results, mean_metrics, output_dir, filename_prefix="a
             print(message)
     print(f"Mean values saved to {means_output_file}")
 
+
 def main():
     # get evaluation arguments from the config file
     eval_args = get_args_from_config("evaluation_settings")
@@ -417,10 +423,10 @@ def main():
 
     # add argument support for quick setting changes
     parser = argparse.ArgumentParser(description="Evaluation metrics")
-    parser.add_argument("-t", "--target", choices=['plaintext', 'json'], help="Target: plaintext or json")
-    parser.add_argument("-p", "--perplexity", action='store_true', help="Compute perplexity")
-    parser.add_argument("-i", "--inference", action='store_true', help="Run inference metrics")
-    parser.add_argument("-full", "--full-eval", action='store_true', help="Run all evaluation metrics")
+    parser.add_argument("-t", "--target", choices=["plaintext", "json"], help="Target: plaintext or json")
+    parser.add_argument("-p", "--perplexity", action="store_true", help="Compute perplexity")
+    parser.add_argument("-i", "--inference", action="store_true", help="Run inference metrics")
+    parser.add_argument("-full", "--full-eval", action="store_true", help="Run all evaluation metrics")
 
     # assign arguments to variables
     args = parser.parse_args()
@@ -463,7 +469,9 @@ def main():
 
     wandb.init(project=wandb_project, entity=wandb_entity, name=wandb_run_name)
 
-    results, mean_metrics = evaluate_model(dataset, model, tokenizer, target, max_generation_length, args.perplexity, args.inference, wandb_flag)
+    results, mean_metrics = evaluate_model(
+        dataset, model, tokenizer, target, max_generation_length, args.perplexity, args.inference, wandb_flag
+    )
 
     filename_prefix = "all_metrics"
     if not args.perplexity:
@@ -478,6 +486,7 @@ def main():
 
     # save results and mean metrics to a JSON file and a text file
     save_results_and_means(results, mean_metrics, output_dir, filename_prefix)
+
 
 if __name__ == "__main__":
     main()

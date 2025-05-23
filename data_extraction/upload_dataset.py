@@ -1,4 +1,4 @@
-from datasets import load_from_disk, DatasetDict
+from datasets import DatasetDict, load_from_disk
 
 from common.utils import get_args_from_config
 
@@ -16,10 +16,7 @@ dataset = load_from_disk(dataset_path)
 reference_features = dataset["train"].features
 
 # align features for all splits
-aligned_dataset = DatasetDict({
-    split: ds.cast(reference_features)
-    for split, ds in dataset.items()
-})
+aligned_dataset = DatasetDict({split: ds.cast(reference_features) for split, ds in dataset.items()})
 
 # push dataset to Hugging Face Hub
 aligned_dataset.push_to_hub(hf_dataset_path)

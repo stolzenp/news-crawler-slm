@@ -2,6 +2,7 @@ import re
 
 from common.utils import get_args_from_config
 
+
 def get_token_counts_for_column(file_path, column_name):
     """Extracts token counts for a specific column from the statistics file."""
     with open(file_path, "r") as g:
@@ -26,6 +27,7 @@ def get_token_counts_for_column(file_path, column_name):
                 column_token_counts.extend([key] * value)
 
     return column_token_counts
+
 
 if __name__ == "__main__":
     # get args from the config file

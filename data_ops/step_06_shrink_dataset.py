@@ -1,9 +1,9 @@
 import os
 
-from datasets import load_from_disk
-from datasets import DatasetDict, Dataset
+from datasets import Dataset, DatasetDict, load_from_disk
 
 from common.utils import get_args_from_config
+
 
 def limit_samples_per_publisher(current_dataset, max_samples=50):
     """Limit the number of samples per publisher to a specified maximum."""
@@ -17,10 +17,11 @@ def limit_samples_per_publisher(current_dataset, max_samples=50):
         if len(grouped[publisher]) < max_samples:
             grouped[publisher].append(sample)
 
-    # Flatten the grouped dictionary back into a list
+    # flatten the grouped dictionary back into a list
     new_data = [sample for samples in grouped.values() for sample in samples]
 
     return Dataset.from_list(new_data)
+
 
 if __name__ == "__main__":
     data_args = get_args_from_config("data_ops_settings")

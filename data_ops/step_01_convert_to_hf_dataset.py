@@ -12,7 +12,7 @@ output_dir = data_args["target_dataset_directory"]
 
 # reading the .txt dataset file and parse the JSON entries
 data = []
-with open(dataset_path, 'r',  encoding="utf-8") as f:
+with open(dataset_path, "r", encoding="utf-8") as f:
     for line in f:
         data.append(json.loads(line))
 

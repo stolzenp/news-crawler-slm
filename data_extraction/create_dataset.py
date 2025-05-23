@@ -1,9 +1,10 @@
 import os
 
-from tqdm import tqdm
 from fundus import PublisherCollection
+from tqdm import tqdm
 
 from common.utils import get_args_from_config
+
 
 def main():
     # get crawler arguments from the config file
@@ -21,9 +22,11 @@ def main():
 
     # raise an error if the publishers directory does not exist
     if not os.path.exists(publishers_directory):
-        raise ValueError("The publishers directory does not exist. Please run 'crawl_articles.py' "
-                         "first to create the publishers directory or set the 'publishers_directory' "
-                         "setting in the config file to the correct path.")
+        raise ValueError(
+            "The publishers directory does not exist. Please run 'crawl_articles.py' "
+            "first to create the publishers directory or set the 'publishers_directory' "
+            "setting in the config file to the correct path."
+        )
 
     # raise an error if the wanted article count is not positive
     if wanted_article_count <= 0:
@@ -37,7 +40,7 @@ def main():
     publishers = PublisherCollection
 
     # create a new file for merged data
-    with open(output_file, 'w') as merged_file:
+    with open(output_file, "w") as merged_file:
         # iterate though all possible publisher files
         for publisher in tqdm(publishers, total=len(publishers), desc="Creating Dataset", miniters=1):
             # get publisher filename
@@ -49,7 +52,7 @@ def main():
                 file_path = os.path.join(publishers_directory, filename)
 
                 # open file
-                with open(file_path, 'r') as f:
+                with open(file_path, "r") as f:
                     # check if only completed publishers should be considered
                     if only_complete_publishers:
                         # count lines without reading the whole file into memory
@@ -83,6 +86,7 @@ def main():
             print(f"All data from all crawled publishers was merged into '{output_file}'.")
         else:
             print(f"No publisher files found in '{publishers_directory}'.")
+
 
 if __name__ == "__main__":
     main()

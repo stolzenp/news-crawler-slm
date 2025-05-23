@@ -1,19 +1,20 @@
-from unsloth import FastLanguageModel, is_bfloat16_supported # repositioned so unsloth does not complain
-from datetime import datetime
 import argparse
-import math
 import json
+import math
 import os
+from datetime import datetime
 
-import wandb
 from datasets import load_from_disk
 from transformers import AutoModelForCausalLM, TrainingArguments
 from transformers.trainer_utils import get_last_checkpoint
+from unsloth import FastLanguageModel, is_bfloat16_supported  # repositioned so unsloth does not complain
+
+import wandb
+from common.utils import format_prompts, get_args_from_config
+from evaluation.evaluate_model import compute_final_json_metrics, compute_inference_metrics
 
 # using custom hf code to enable contrastive loss and inference metrics evaluation
 from model_training.custom_hf_instances import CustomTrainer, custom_from_pretrained
-from evaluation.evaluate_model import compute_inference_metrics, compute_final_json_metrics
-from common.utils import format_prompts, get_args_from_config
 
 model_args = get_args_from_config("model_training_settings")
 
@@ -71,8 +72,8 @@ wandb_run_ids_file = f"{output_base_dir}/wandb_run_ids.json"
 
 # add argument support for quick setting changes
 parser = argparse.ArgumentParser(description="Finetune model")
-parser.add_argument("-t", "--target", choices=['plaintext', 'json'], help="Target: plaintext or json")
-parser.add_argument("-cl", "--contrastive-loss", action='store_true', help="Run training with contrastive loss")
+parser.add_argument("-t", "--target", choices=["plaintext", "json"], help="Target: plaintext or json")
+parser.add_argument("-cl", "--contrastive-loss", action="store_true", help="Run training with contrastive loss")
 parser.add_argument("-r", "--resume", type=str, default=None, help="Weights & Biases run name for resuming run")
 
 # parse arguments
@@ -105,24 +106,25 @@ if run_name and enable_wandb:
 
 
 model, tokenizer = FastLanguageModel.from_pretrained(
-    model_name = model_name,
+    model_name=model_name,
     # Unsloth supports RoPE Scaling, so any is possible if resources allow it
-    max_seq_length = sequence_length, # we chose 32768 based on our resources
-    dtype = None, # None for auto-detection
-    load_in_4bit = load_in_4bit, # 4bit quantization for reducing memory usage; we set True
+    max_seq_length=sequence_length,  # we chose 32768 based on our resources
+    dtype=None,  # None for auto-detection
+    load_in_4bit=load_in_4bit,  # 4bit quantization for reducing memory usage; we set True
 )
 
 model = FastLanguageModel.get_peft_model(
     model,
     # our LoRA settings result in approximately 1-2% trainable parameters of total parameter count
-    r = peft_r, # we chose 16
-    target_modules = peft_target_modules, # we chose ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
-    lora_alpha = peft_lora_alpha, # we chose 16
-    lora_dropout = peft_lora_dropout, # we set 0 since Unsloth is optimized for this value
-    bias = peft_bias, # we set "none" since Unsloth is optimized for this value
-    use_gradient_checkpointing = peft_use_gradient_checkpointing, # we set "unsloth" which supports a very long context
-    random_state = random_seed, # we chose 42
-    loftq_config = peft_loftq_config, # we set None to not use LoFTQ
+    r=peft_r,  # we chose 16
+    # we chose ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"] as target modules
+    target_modules=peft_target_modules,
+    lora_alpha=peft_lora_alpha,  # we chose 16
+    lora_dropout=peft_lora_dropout,  # we set 0 since Unsloth is optimized for this value
+    bias=peft_bias,  # we set "none" since Unsloth is optimized for this value
+    use_gradient_checkpointing=peft_use_gradient_checkpointing,  # we set "unsloth" which supports a very long context
+    random_state=random_seed,  # we chose 42
+    loftq_config=peft_loftq_config,  # we set None to not use LoFTQ
 )
 
 # load dataset
@@ -134,22 +136,15 @@ eos_token = tokenizer.eos_token
 # format prompts for training and evaluation using the utility function
 dataset = dataset.map(
     lambda examples: format_prompts(
-        examples,
-        input_column=input_column,
-        output_column=target,
-        eos_token=eos_token,
-        for_training=True
-    ),
-    batched=True
-)
-dataset["val"] = dataset["val"].map(
-    lambda examples: format_prompts(
-        examples,
-        input_column=input_column,
-        for_training=False
+        examples, input_column=input_column, output_column=target, eos_token=eos_token, for_training=True
     ),
     batched=True,
 )
+dataset["val"] = dataset["val"].map(
+    lambda examples: format_prompts(examples, input_column=input_column, for_training=False),
+    batched=True,
+)
+
 
 # define metric accumulator for batch evaluation
 class MetricAccumulator:
@@ -180,7 +175,9 @@ class MetricAccumulator:
         self.perplexity += math.exp(loss.item())
 
         # inference metrics
-        inf_metrics = compute_inference_metrics(sample["text_inf"], max_generation_length, target, sample[target], inf_model, tokenizer)
+        inf_metrics = compute_inference_metrics(
+            sample["text_inf"], max_generation_length, target, sample[target], inf_model, tokenizer
+        )
         self.rouge_l += inf_metrics["Rouge-L"]
         self.bleu += inf_metrics["BLEU"]
         self.meteor += inf_metrics["METEOR"]
@@ -244,9 +241,11 @@ class MetricAccumulator:
 
         return result
 
+
 # helpers for compute metrics
 accumulator = MetricAccumulator()
 COUNTER_EVAL = 0
+
 
 # compute perplexity and inference metrics batch-wise
 def compute_metrics(eval_pred, compute_result, current_model):
@@ -258,6 +257,7 @@ def compute_metrics(eval_pred, compute_result, current_model):
         accumulator.add(eval_pred.losses, current_model, dataset["val"][COUNTER_EVAL])
         COUNTER_EVAL += 1
         return {}
+
 
 # resume training from a previous run if requested, otherwise initialize a new run with wandb logging
 if run_id:
@@ -305,41 +305,41 @@ os.makedirs(checkpoint_dir, exist_ok=True)
 
 # set up the trainer
 trainer = CustomTrainer(
-    model = model,
+    model=model,
     processing_class=tokenizer,
     compute_metrics=compute_metrics,
-    train_dataset = dataset["train"],
+    train_dataset=dataset["train"],
     eval_dataset=dataset["val"],
-    dataset_text_field = "text",
-    max_seq_length = sequence_length, # we chose 32768 based on our resources
-    dataset_num_proc = dataset_num_proc, # we chose 8 based on our resources
-    args = TrainingArguments(
-        warmup_steps = warmup_steps, # we chose 1000
-        num_train_epochs = training_epochs, # we chose 1 epoch since we have many samples and to prevent overfitting
-        per_device_train_batch_size = per_device_train_batch_size, # we chose 1 to keep memory as low as possible
-        learning_rate = learning_rate, # we set 4e-5 since it is reasonable for fine-tuning
-        lr_scheduler_type = lr_scheduler_type, # we chose linear
-        fp16 = not is_bfloat16_supported(), # automatically set fp16
-        bf16 = is_bfloat16_supported(), # automatically set bf16
-        gradient_accumulation_steps = gradient_accumulation_steps, # we chose 1 for no accumulation
-        optim = optimizer, # we chose adamw_8bit
-        weight_decay = weight_decay, # we chose 0.01
-        seed = random_seed, # we chose 42
-        eval_strategy = eval_strategy, # we chose steps for logging eval metrics
-        eval_steps = eval_steps, # we set 1000
-        per_device_eval_batch_size = per_device_eval_batch_size, # we set 1 to keep memory low
-        batch_eval_metrics = batch_eval_metrics, # we chose True to save memory
-        eval_on_start = eval_on_start, # we chose True for initial metric scores
-        include_for_metrics = include_for_metrics, # included loss for easier perplexity calculation
-        output_dir = checkpoint_dir,
-        save_strategy = save_strategy, # we chose steps
-        save_steps = save_steps, # we chose 1000
-        logging_dir = logging_dir,
-        logging_steps = logging_steps, # we chose 50
-        report_to = report_to, # we chose wandb for online logging and tensorboard for local logs
-        load_best_model_at_end = load_best_model_at_end, # we set True
-        metric_for_best_model = metric_for_best_model, # we chose Rouge-L
-        greater_is_better = greater_is_better, # according to Rouge-L, we set True
+    dataset_text_field="text",
+    max_seq_length=sequence_length,  # we chose 32768 based on our resources
+    dataset_num_proc=dataset_num_proc,  # we chose 8 based on our resources
+    args=TrainingArguments(
+        warmup_steps=warmup_steps,  # we chose 1000
+        num_train_epochs=training_epochs,  # we chose 1 epoch since we have many samples and to prevent overfitting
+        per_device_train_batch_size=per_device_train_batch_size,  # we chose 1 to keep memory as low as possible
+        learning_rate=learning_rate,  # we set 4e-5 since it is reasonable for fine-tuning
+        lr_scheduler_type=lr_scheduler_type,  # we chose linear
+        fp16=not is_bfloat16_supported(),  # automatically set fp16
+        bf16=is_bfloat16_supported(),  # automatically set bf16
+        gradient_accumulation_steps=gradient_accumulation_steps,  # we chose 1 for no accumulation
+        optim=optimizer,  # we chose adamw_8bit
+        weight_decay=weight_decay,  # we chose 0.01
+        seed=random_seed,  # we chose 42
+        eval_strategy=eval_strategy,  # we chose steps for logging eval metrics
+        eval_steps=eval_steps,  # we set 1000
+        per_device_eval_batch_size=per_device_eval_batch_size,  # we set 1 to keep memory low
+        batch_eval_metrics=batch_eval_metrics,  # we chose True to save memory
+        eval_on_start=eval_on_start,  # we chose True for initial metric scores
+        include_for_metrics=include_for_metrics,  # included loss for easier perplexity calculation
+        output_dir=checkpoint_dir,
+        save_strategy=save_strategy,  # we chose steps
+        save_steps=save_steps,  # we chose 1000
+        logging_dir=logging_dir,
+        logging_steps=logging_steps,  # we chose 50
+        report_to=report_to,  # we chose wandb for online logging and tensorboard for local logs
+        load_best_model_at_end=load_best_model_at_end,  # we set True
+        metric_for_best_model=metric_for_best_model,  # we chose Rouge-L
+        greater_is_better=greater_is_better,  # according to Rouge-L, we set True
     ),
 )
 

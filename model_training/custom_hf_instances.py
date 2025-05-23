@@ -4,7 +4,6 @@ from typing import List, Optional, Tuple, Union
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-
 from transformers import AutoModelForCausalLM, Qwen2ForCausalLM, modeling_outputs
 from transformers.integrations import deepspeed_init
 from transformers.trainer_pt_utils import EvalLoopContainer, IterableDatasetShard, find_batch_size
@@ -15,13 +14,13 @@ from transformers.trainer_utils import (
     has_length,
 )
 from transformers.utils import is_torch_xla_available, logging
-
 from trl import SFTTrainer
 
 if is_torch_xla_available():
     import torch_xla.core.xla_model as xm
 
 logger = logging.get_logger(__name__)
+
 
 # subclass for applying the contrastive loss approach in the model forward
 class Qwen2ForCausalLMWithCL(Qwen2ForCausalLM):
@@ -34,11 +33,11 @@ class Qwen2ForCausalLMWithCL(Qwen2ForCausalLM):
         self.post_init()
 
     def compute_contrastive_loss(self, score_matrix, margin):
-        '''
-           margin: predefined margin to push similarity score away
-           score_matrix: bsz x seqlen x seqlen; cosine similarity matrix
-           input_ids: bsz x seqlen
-        '''
+        """
+        margin: predefined margin to push similarity score away
+        score_matrix: bsz x seqlen x seqlen; cosine similarity matrix
+        input_ids: bsz x seqlen
+        """
         bsz, seqlen, _ = score_matrix.size()
         gold_score = torch.diagonal(score_matrix, offset=0, dim1=1, dim2=2)  # bsz x seqlen
         gold_score = torch.unsqueeze(gold_score, -1)
@@ -51,22 +50,22 @@ class Qwen2ForCausalLMWithCL(Qwen2ForCausalLM):
         return cl_loss
 
     def forward(
-            self,
-            input_ids: torch.LongTensor = None,
-            attention_mask: Optional[torch.Tensor] = None,
-            position_ids: Optional[torch.LongTensor] = None,
-            past_key_values: Optional[List[torch.FloatTensor]] = None,
-            inputs_embeds: Optional[torch.FloatTensor] = None,
-            labels: Optional[torch.LongTensor] = None,
-            use_cache: Optional[bool] = None,
-            output_attentions: Optional[bool] = None,
-            output_hidden_states: Optional[bool] = None,
-            return_dict: Optional[bool] = None,
-            cache_position: Optional[torch.LongTensor] = None,
-            num_logits_to_keep: int = 0,
-            # we set 0.5 as default
-            margin: float = 0.5, # Su et al. achieved best results with this value in their paper
-            **loss_kwargs,
+        self,
+        input_ids: torch.LongTensor = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_values: Optional[List[torch.FloatTensor]] = None,
+        inputs_embeds: Optional[torch.FloatTensor] = None,
+        labels: Optional[torch.LongTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None,
+        cache_position: Optional[torch.LongTensor] = None,
+        num_logits_to_keep: int = 0,
+        # we set 0.5 as default
+        margin: float = 0.5,  # Su et al. achieved best results with this value in their paper
+        **loss_kwargs,
     ) -> Union[Tuple, modeling_outputs.CausalLMOutputWithPast]:
 
         bsz, seqlen = input_ids.size()
@@ -122,21 +121,23 @@ class Qwen2ForCausalLMWithCL(Qwen2ForCausalLM):
             attentions=outputs.attentions,
         )
 
+
 def custom_from_pretrained(model_name, *args, **kwargs):
     if "qwen2" in model_name or "ReaderLM-v2" in model_name:
         print(f"⚡ Loading CustomQwen2Model with contrastive loss instead of Qwen2ForCausalLM for {model_name}")
         return Qwen2ForCausalLMWithCL.from_pretrained(model_name, *args, **kwargs)
     return AutoModelForCausalLM.from_pretrained(model_name, *args, **kwargs)
 
+
 # custom SFTTrainer that also passes current_model to compute_metrics
 class CustomTrainer(SFTTrainer):
     def evaluation_loop(
-            self,
-            dataloader: DataLoader,
-            description: str,
-            prediction_loss_only: Optional[bool] = None,
-            ignore_keys: Optional[List[str]] = None,
-            metric_key_prefix: str = "eval",
+        self,
+        dataloader: DataLoader,
+        description: str,
+        prediction_loss_only: Optional[bool] = None,
+        ignore_keys: Optional[List[str]] = None,
+        metric_key_prefix: str = "eval",
     ) -> EvalLoopOutput:
         """
         Prediction/evaluation loop, shared by `Trainer.evaluate()` and `Trainer.predict()`.
@@ -268,7 +269,8 @@ class CustomTrainer(SFTTrainer):
                     # adding current model to EvalPrediction
                     metrics = self.compute_metrics(
                         EvalPrediction(predictions=logits, label_ids=labels, **batch_kwargs),
-                        compute_result=is_last_step, current_model=model
+                        compute_result=is_last_step,
+                        current_model=model,
                     )
 
                 del losses, logits, labels, inputs
@@ -313,10 +315,10 @@ class CustomTrainer(SFTTrainer):
 
         # Metrics!
         if (
-                self.compute_metrics is not None
-                and all_preds is not None
-                and all_labels is not None
-                and not self.args.batch_eval_metrics
+            self.compute_metrics is not None
+            and all_preds is not None
+            and all_labels is not None
+            and not self.args.batch_eval_metrics
         ):
             eval_set_kwargs["losses"] = all_losses if "loss" in args.include_for_metrics else None
             eval_set_kwargs["inputs"] = all_inputs if "inputs" in args.include_for_metrics else None

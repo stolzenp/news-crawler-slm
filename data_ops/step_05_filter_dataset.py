@@ -1,8 +1,7 @@
 import os
 import re
 
-from datasets import load_from_disk
-from datasets import DatasetDict
+from datasets import DatasetDict, load_from_disk
 
 from common.utils import get_args_from_config
 
@@ -48,8 +47,9 @@ for line in lines:
 filtered_dataset = {}
 for split in dataset.keys():
     if split in positions_to_remove:
-        filtered_dataset[split] = dataset[split].filter(lambda _, idx: idx not in positions_to_remove[split],
-                                                         with_indices=True)
+        filtered_dataset[split] = dataset[split].filter(
+            lambda _, idx, s=split: idx not in positions_to_remove[s], with_indices=True
+        )
     else:
         filtered_dataset[split] = dataset[split]
 

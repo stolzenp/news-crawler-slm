@@ -1,12 +1,13 @@
-import os
-import json
 import argparse
+import json
+import os
 
 from datasets import load_from_disk
 
 from common.utils import get_args_from_config
 
-def check_sample(dataset_directory, dataset_split, split_columns, index, output_directory=os.getcwd()):
+
+def check_sample(dataset_directory, dataset_split, split_columns, index, output_directory):
     """Check a sample and save it to a file."""
 
     # get the sample and save it
@@ -25,6 +26,7 @@ def check_sample(dataset_directory, dataset_split, split_columns, index, output_
 
     print(json.dumps(filtered_sample, indent=2))
     print(f"Sample saved to {sample_file}")
+
 
 if __name__ == "__main__":
     # get data ops arguments from the config file

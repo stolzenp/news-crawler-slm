@@ -1,15 +1,22 @@
-from typing import Literal, Dict, Optional
 from pathlib import Path
+from typing import Dict, Literal, Optional
 
 from transformers import HfArgumentParser
 
 from common.data_structures import Config
 
 # define literal for possible argument categories
-ArgumentCategory = Literal["data_extraction_settings", "data_ops_settings", "model_training_settings", "evaluation_settings", "statistics_settings"]
+ArgumentCategory = Literal[
+    "data_extraction_settings",
+    "data_ops_settings",
+    "model_training_settings",
+    "evaluation_settings",
+    "statistics_settings",
+]
 
 # set the path to the config file
 PATH_TO_CONFIG = Path(__file__).resolve().parent.parent / "config.json"
+
 
 # function for accessing arguments of a specific category
 def get_args_from_config(args: ArgumentCategory):
@@ -24,17 +31,21 @@ def get_args_from_config(args: ArgumentCategory):
     else:
         raise ValueError(f"Unknown argument category: {args}")
 
+
 # common prompt templates
 INPUT_OUTPUT_PROMPT = "Input:\n{}\n\nOutput:\n{}"
 INPUT_ONLY_PROMPT = "Input:\n{}\n\nOutput:\n"
 
-def format_prompts(examples: Dict, 
-                  input_column: str = "html", 
-                  output_column: Optional[str] = None, 
-                  eos_token: str = "", 
-                  for_training: bool = True,
-                  compute_perplexity: bool = True,
-                  compute_inference: bool = True) -> Dict:
+
+def format_prompts(
+    examples: Dict,
+    input_column: str = "html",
+    output_column: Optional[str] = None,
+    eos_token: str = "",
+    for_training: bool = True,
+    compute_perplexity: bool = True,
+    compute_inference: bool = True,
+) -> Dict:
     """
     Formats prompts for training or evaluation.
 
