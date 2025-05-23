@@ -1,5 +1,6 @@
-import random
 import os
+import random
+
 from datasets import DatasetDict, load_from_disk
 
 from common.utils import get_args_from_config

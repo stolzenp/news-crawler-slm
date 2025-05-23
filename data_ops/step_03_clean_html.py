@@ -1,6 +1,7 @@
-from datasets import load_from_disk
 import os
 import re
+
+from datasets import load_from_disk
 from bs4 import BeautifulSoup, Comment
 
 from common.utils import get_args_from_config

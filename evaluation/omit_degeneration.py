@@ -1,6 +1,5 @@
 import json
 import argparse
-import os
 
 from common.utils import get_args_from_config
 
