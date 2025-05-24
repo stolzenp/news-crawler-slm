@@ -1,70 +1,107 @@
 # **news-crawler-slm**
 
-**Status**: Work in Progress  
-**Project Type**: Master's Thesis Project
+**Status**: 🚧 Work in Progress  
+**Project Type**: Master's Thesis
 
-## **Overview**
-`news-crawler-slm` is a framework designed to assist Small Language Models (SLMs) in extracting relevant information from the HTML content of news articles published by any source. This project leverages the [Fundus framework](https://github.com/flairNLP/fundus), it eases the creation of structured datasets for news articles, which is essential for training and evaluating language models in this domain.
+## 📌 Overview
 
-The primary goal of this project is to improve the adaptability of SLMs to various sources of web news content, enabling them to handle diverse styles and structures found across different publishers. This will be achieved by:
-- **Finetuning SLMs**: Training models on datasets derived from Fundus articles to improve their extraction accuracy on unfamiliar publishers.
-- **Evaluation**: Comparing the performance of these finetuned models against similar language models using a benchmark dataset created with Fundus's manual extraction rules.
+`news-crawler-slm` is a framework designed to help **Small Language Models (SLMs)** extract relevant information from the HTML content of news articles published by **any** source. Built on top of the [Fundus framework](https://github.com/flairNLP/fundus), it simplifies the creation of structured datasets for training and evaluating language models in diverse news domains.
 
-## **Features**
-- **Data Extraction**: Scripts to extract and preprocess relevant HTML data from Fundus-sourced articles.
-- **SLM Finetuning**: Scripts for model training and finetuning on the prepared datasets.
-- **Evaluation and Analysis**: Methods to evaluate and compare model performance on unseen publishers.
+### 🎯 Objective
 
-## **Installation**
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/stolzenp/news-crawler-slm.git
-   ```
-2. Install dependencies [WIP]:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Set up the configuration by following the [Configuration](#configuration) section.
+Enable SLMs to generalize across varying web news layouts by:
+- **Fine-tuning SLMs** on datasets generated from Fundus articles to improve their ability to handle unseen publishers.
+- **Evaluating performance** on a benchmark dataset created using Fundus's rule-based extraction, comparing against models that are not fine-tuned.
 
-## **Usage**  
+## ✨ Features
 
-To perform dataset generation, model training, and evaluation, run the provided scripts in the project root. Commands are documented in this usage guide.  
+- 🔍 **Data Extraction**: Crawl and extract structured HTML content using Fundus.
+- 🧹 **Dataset Operations**: Check and preprocess datasets (e.g., clean messy HTML).
+- 📊 **Dataset Statistics**: Compute dataset statistics like token length distribution.
+- 🔧 **SLM Fine-tuning**: Fine-tune models on curated datasets.
+- 🧪 **Evaluation**: Assess model generalization to unseen publishers.
 
-### Example Commands  
+## 🚀 Installation
 
-#### **Dataset Generation**  
-Use the following command to generate a dataset:  
+**Python version**: `3.10.14` (other versions are not guaranteed to work)
+
+Clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/stolzenp/news-crawler-slm.git
+cd news-crawler-slm
+make install
+```
+
+For development:
+```bash
+make install-dev
+```
+
+Then follow the [Configuration](#configuration) instructions.
+
+## ⚙️ Usage
+
+The project is modular, with each feature in a dedicated submodule. Check each module's `README.md` for details. Below are some common commands.
+
+> **Note**: Scripts with `step_x_` prefixes are part of a recommended multi-step preprocessing pipeline.
+
+### 🔄 Preprocessing Pipeline
+
+Preprocessing is broken into multiple steps due to the noisy and lengthy HTML from crawled articles. Each step is executed independently and in order. For example:
+- `step_03_clean_html.py`: Cleans HTML content.
+- `step_04_get_token_statistics.py`: Computes token stats.
+- `step_05_filter_dataset.py`: Filters based on stats.
+
+### 🧪 Example Commands
+
+#### Gather Articles For Dataset
 ```bash
 python -m data_extraction.crawl_articles
-```  
+```
 
-#### **Model Fine-tuning [WIP]**  
-To fine-tune a Small Language Model (SLM), execute:  
+#### Clean HTML
+```bash
+python -m data_ops.step_03_clean_html
+```
+
+#### Compute Token Statistics
+```bash
+python -m compute_statistics.step_04_get_token_statistics
+```
+
+#### Fine-tune Model
 ```bash
 python -m model_training.finetune_model
 ```
 
-#### **Model Evaluation [WIP]**  
-To evaluate a resulting model, execute:  
+#### Evaluate Model
 ```bash
-python -m model_training.evaluate_model
-```  
+python -m evaluation.evaluate_model
+```
 
-## **Configuration [WIP]**
-To customize this project:
-1. Open `config.json` file
-2. Configure any necessary parameters:
-   ```env
-   "model_name_or_path": "<model_of_choice>"
-   ```
+## 🛠️ Configuration
 
-## **Contributing**
-This project will welcome contributions after the associated thesis is completed. If you are interested in contributing, please submit an issue or a pull request.
+All settings are managed in the `config.json` file (in the project root).
 
-## **License**
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+### Steps:
+1. Open `config.json`.
+2. Locate the section corresponding to your module of interest.
+3. Modify values as needed. Refer to `data_structures.py` in the `common` module for detailed schema.
 
-## **Acknowledgments**
-- [Fundus Framework](https://github.com/flairNLP/fundus): For providing tools for generating structured datasets essential for model training and evaluation.
+#### Example
+```json
+"model_name_or_path": "slm-base-model"
+```
 
+## 🤝 Contributing
 
+Contributions will be welcomed after the thesis is submitted. Feel free to open an issue or draft a pull request if you're interested.
+
+## 📄 License
+
+MIT License. See [LICENSE](LICENSE) for details.
+
+## 🙏 Acknowledgments
+
+- [Fundus](https://github.com/flairNLP/fundus): For enabling structured news dataset generation.

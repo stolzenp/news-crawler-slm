@@ -3,11 +3,11 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from common.utils import get_args_from_config
 
 # get dataset arguments from the config file
-model_args = get_args_from_config("data_extraction_settings")
+eval_args = get_args_from_config("evaluation_settings")
 
 # set model variables
-model_path = model_args["model_checkpoint_directory"]
-hf_model_path = model_args["hf_model_path"]
+model_path = eval_args["model_name_or_path"]
+hf_model_path = eval_args["huggingface_model_path"]
 
 # load model and tokenizer
 model = AutoModelForCausalLM.from_pretrained("your_model_dir")

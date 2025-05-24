@@ -89,7 +89,7 @@ if __name__ == "__main__":
     dataset = load_from_disk(split_dataset_path)
 
     # apply cleaning to each dataset split
-    for split in ["train", "val", "test"]:
+    for split in dataset:
         print(f"Processing {split} split...")
         dataset[split] = dataset[split].map(clean_dataset, desc=f"Cleaning {split}")
 
