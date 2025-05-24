@@ -67,7 +67,7 @@ python -m data_ops.step_03_clean_html
 
 #### Compute Token Statistics
 ```bash
-python -m compute_statistics.step_04_get_token_statistics
+python -m compute_statistics.tokens.step_04_get_token_statistics
 ```
 
 #### Fine-tune Model
