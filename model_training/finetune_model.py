@@ -188,16 +188,16 @@ class MetricAccumulator:
         if target == "json":
             self.valid_json_count += inf_metrics["valid_json"]
 
-            if inf_metrics["valid_json"] == 1:
-                self.body_rouge_l += inf_metrics["body_Rouge-L"]
-                self.body_bleu += inf_metrics["body_BLEU"]
-                self.body_meteor += inf_metrics["body_METEOR"]
-                self.body_levenshtein += inf_metrics["body_Levenshtein"]
-                self.body_damerau += inf_metrics["body_Damerau"]
-                self.body_jaro_winkler += inf_metrics["body_Jaro-Winkler"]
-                self.tp += inf_metrics["TP"]
-                self.fp += inf_metrics["FP"]
-                self.fn += inf_metrics["FN"]
+            if inf_metrics.get("valid_json", 0) == 1:
+                self.body_rouge_l += inf_metrics.get("body_Rouge-L", 0)
+                self.body_bleu += inf_metrics.get("body_BLEU", 0)
+                self.body_meteor += inf_metrics.get("body_METEOR", 0)
+                self.body_levenshtein += inf_metrics.get("body_Levenshtein", 0)
+                self.body_damerau += inf_metrics.get("body_Damerau", 0)
+                self.body_jaro_winkler += inf_metrics.get("body_Jaro-Winkler", 0)
+                self.tp += inf_metrics.get("TP", 0)
+                self.fp += inf_metrics.get("FP", 0)
+                self.fn += inf_metrics.get("FN", 0)
 
     def compute(self):
 
