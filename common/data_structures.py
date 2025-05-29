@@ -148,6 +148,8 @@ class EvaluationArguments:
     )
     base_output_dir: str = field(metadata={"help": ("Directory where evaluation outputs and metrics will be saved.")})
     raw_metrics_file: str = field(metadata={"help": ("Filename to save raw metric results.")})
+    repetition_threshold: float = field(metadata={"help": ("Threshold for detecting repetitive samples.")})
+    n_grams: int = field(metadata={"help": ("Number of n-grams to use for repetition detection.")})
     huggingface_model_path: Optional[str] = field(
         metadata={"help": ("Optional Hugging Face model hub path (e.g., 'username/model-name').")}
     )
