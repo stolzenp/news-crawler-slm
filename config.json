@@ -83,6 +83,7 @@
     "run_all_metrics": true,
     "target_column": "json",
     "base_output_dir": "/home/results/experiment/run-name/checkpoint-number",
+    "results_dir": "/home/results/experiment/run-name/checkpoint-number/dataset/split",
     "raw_metrics_file": "all_metrics_results.json",
     "repetition_threshold": 0.1,
     "n_grams": 5,
