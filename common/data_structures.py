@@ -146,7 +146,8 @@ class EvaluationArguments:
     target_column: str = field(
         metadata={"help": ("Column name in the dataset that contains the target output (e.g., 'json').")}
     )
-    base_output_dir: str = field(metadata={"help": ("Directory where evaluation outputs and metrics will be saved.")})
+    base_output_dir: str = field(metadata={"help": ("Base directory for evaluation outputs and metrics.")})
+    results_dir: str = field(metadata={"help": ("Directory containing results to be filtered.")})
     raw_metrics_file: str = field(metadata={"help": ("Filename to save raw metric results.")})
     repetition_threshold: float = field(metadata={"help": ("Threshold for detecting repetitive samples.")})
     n_grams: int = field(metadata={"help": ("Number of n-grams to use for repetition detection.")})

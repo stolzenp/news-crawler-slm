@@ -45,6 +45,10 @@ def exclude_degeneration_results(
     # check each result for degeneration
     for obj in data:
         output = obj.get("inference_output")
+
+        if isinstance(output, dict):
+            output = str(output)
+
         repetition_ratio_value = repetition_severity_ratio(output, n_grams_size)
         obj["repetition_ratio"] = repetition_ratio_value
         repetition_ratio_values.append(repetition_ratio_value)
@@ -106,7 +110,12 @@ def exclude_degeneration_results(
 
         print(f"Filtered results with no degeneration saved to {output_path}\n")
 
-        means = {attr: sum(obj[attr] for obj in filtered_data) / len(filtered_data) for attr in numeric_attributes}
+        # get new means for each attribute
+        means = {}
+        for attr in numeric_attributes:
+            values = [obj[attr] for obj in filtered_data if attr in obj]
+            if values:
+                means[attr] = sum(values) / len(values)
 
         # save new mean values
         with open(mean_output_path, "w", encoding="utf-8") as f:
@@ -128,7 +137,7 @@ if __name__ == "__main__":
     raw_metrics_file = eval_args["raw_metrics_file"]
     rep_threshold = eval_args["repetition_threshold"]
     n_grams = eval_args["n_grams"]
-    output_dir = eval_args["base_output_dir"]
+    results_dir = eval_args["results_dir"]
 
     # support arguments to enable quick setting change in CLI
     parser = argparse.ArgumentParser(description="Filter out degeneration results")
@@ -158,12 +167,20 @@ if __name__ == "__main__":
     elif args.n_gram:
         n_grams = args.n_gram
 
+    if n_grams < 1:
+        print("N-gram size must be at least 1. Exiting.")
+        exit()
+
+    if rep_threshold < 0.0 or rep_threshold > 1.0:
+        print("Repetition threshold must be between 0.0 and 1.0. Exiting.")
+        exit()
+
     # set the input file path
-    input_file = f"{output_dir}/{raw_metrics_file}"
+    input_file = f"{results_dir}/{raw_metrics_file}"
 
     # set output paths
-    output_file = f"{output_dir}/nodegen_{raw_metrics_file}"
-    degen_file = f"{output_dir}/degen_{raw_metrics_file}"
+    output_file = f"{results_dir}/nodegen_{raw_metrics_file}"
+    degen_file = f"{results_dir}/degen_{raw_metrics_file}"
     output_means_file = output_file.replace("results.json", "means.txt")
     plot_file = output_file.replace("results.json", f"repetition_hist_n{n_grams}.png")
 

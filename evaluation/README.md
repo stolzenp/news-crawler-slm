@@ -52,6 +52,14 @@ python -m evaluation.omit_degeneration [options]
   *String*  
   Description: Path to the metric scores file (in `.json` format).
 
+* `-rep` `--rep-threshold`  
+  *Float*   
+  Description: Maximal allowed repetition ratio for filtering degenerated samples
+
+* `-n` `n-gram`   
+  *Integer*   
+  Description: N-gram size used for repetition detection
+
 ### `upload_model.py`
 
 ```bash
