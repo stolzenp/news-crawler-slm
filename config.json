@@ -84,6 +84,8 @@
     "target_column": "json",
     "base_output_dir": "/home/results/experiment/run-name/checkpoint-number",
     "raw_metrics_file": "all_metrics_results.json",
+    "repetition_threshold": 0.1,
+    "n_grams": 5,
     "huggingface_model_path": "username/model-name",
     "log_to_wandb": true,
     "wandb_project": "project-name",
