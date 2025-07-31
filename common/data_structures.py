@@ -136,48 +136,48 @@ class ModelArguments:
 @dataclass
 class EvaluationArguments:
     model_name_or_path: str = field(
-        metadata={"help": ("Path to the model checkpoint or Hugging Face model to evaluate.")}
+        metadata={"help": "Path to the model checkpoint or Hugging Face model to evaluate."}
     )
-    sequence_length: int = field(metadata={"help": ("Maximum sequence length for model inputs during evaluation.")})
-    max_generation_length: int = field(metadata={"help": ("Maximum number of tokens to generate during evaluation.")})
-    dataset_path: str = field(metadata={"help": ("Path to the dataset used for evaluation.")})
-    split: str = field(metadata={"help": ("Which split of the dataset to evaluate on (e.g., 'val' or 'test').")})
-    run_all_metrics: bool = field(metadata={"help": ("Whether to compute all available metrics during evaluation.")})
+    sequence_length: int = field(metadata={"help": "Maximum sequence length for model inputs during evaluation."})
+    max_generation_length: int = field(metadata={"help": "Maximum number of tokens to generate during evaluation."})
+    dataset_path: str = field(metadata={"help": "Path to the dataset used for evaluation."})
+    split: str = field(metadata={"help": "Which split of the dataset to evaluate on (e.g., 'val' or 'test')."})
+    run_all_metrics: bool = field(metadata={"help": "Whether to compute all available metrics during evaluation."})
     target_column: str = field(
-        metadata={"help": ("Column name in the dataset that contains the target output (e.g., 'json').")}
+        metadata={"help": "Column name in the dataset that contains the target output (e.g., 'json')."}
     )
-    base_output_dir: str = field(metadata={"help": ("Base directory for evaluation outputs and metrics.")})
-    results_dir: str = field(metadata={"help": ("Directory containing results to be filtered.")})
-    raw_metrics_file: str = field(metadata={"help": ("Filename to save raw metric results.")})
-    repetition_threshold: float = field(metadata={"help": ("Threshold for detecting repetitive samples.")})
-    n_grams: int = field(metadata={"help": ("Number of n-grams to use for repetition detection.")})
+    base_output_dir: str = field(metadata={"help": "Base directory for evaluation outputs and metrics."})
+    results_dir: str = field(metadata={"help": "Directory containing results to be filtered."})
+    raw_metrics_file: str = field(metadata={"help": "Filename to save raw metric results."})
+    repetition_threshold: float = field(metadata={"help": "Threshold for detecting repetitive samples."})
+    n_grams: int = field(metadata={"help": "Number of n-grams to use for repetition detection."})
     huggingface_model_path: Optional[str] = field(
-        metadata={"help": ("Optional Hugging Face model hub path (e.g., 'username/model-name').")}
+        metadata={"help": "Optional Hugging Face model hub path (e.g., 'username/model-name')."}
     )
-    log_to_wandb: bool = field(metadata={"help": ("Whether to log evaluation metrics to Weights & Biases.")})
+    log_to_wandb: bool = field(metadata={"help": "Whether to log evaluation metrics to Weights & Biases."})
     wandb_project: Optional[str] = field(
-        default=None, metadata={"help": ("Weights & Biases project name for logging.")}
+        default=None, metadata={"help": "Weights & Biases project name for logging."}
     )
-    wandb_entity: Optional[str] = field(default=None, metadata={"help": ("Weights & Biases entity (team or user).")})
+    wandb_entity: Optional[str] = field(default=None, metadata={"help": "Weights & Biases entity (team or user)."})
     wandb_run_name: Optional[str] = field(
-        default=None, metadata={"help": ("Weights & Biases run name to log this evaluation run to.")}
+        default=None, metadata={"help": "Weights & Biases run name to log this evaluation run to."}
     )
 
 
 @dataclass
 class StatisticsArguments:
-    output_dir: str = field(metadata={"help": ("Directory where all generated statistics will be saved.")})
-    dataset_directory: str = field(metadata={"help": ("Path to the directory containing the dataset to analyze.")})
-    token_stats_file: str = field(metadata={"help": ("Filename for saving token-level statistics.")})
+    output_dir: str = field(metadata={"help": "Directory where all generated statistics will be saved."})
+    dataset_directory: str = field(metadata={"help": "Path to the directory containing the dataset to analyze."})
+    token_stats_file: str = field(metadata={"help": "Filename for saving token-level statistics."})
     dataset_stats_file: str = field(
-        metadata={"help": ("Filename for saving statistics about dataset splits (e.g., number of samples per split).")}
+        metadata={"help": "Filename for saving statistics about dataset splits (e.g., number of samples per split)."}
     )
     language_stats_file: str = field(
-        metadata={"help": ("Filename for saving statistics about language distribution in the dataset.")}
+        metadata={"help": "Filename for saving statistics about language distribution in the dataset."}
     )
-    max_token_limit: int = field(metadata={"help": ("Token threshold used for counting samples exceeding this limit.")})
+    max_token_limit: int = field(metadata={"help": "Token threshold used for counting samples exceeding this limit."})
     columns: List[str] = field(
-        metadata={"help": ("List of dataset columns to involve (e.g., ['html', 'plaintext', 'json']).")}
+        metadata={"help": "List of dataset columns to involve (e.g., ['html', 'plaintext', 'json'])."}
     )
     distribution_analysis_file: str = field(
         metadata={
@@ -186,7 +186,7 @@ class StatisticsArguments:
             )
         }
     )
-    max_tokens_file: str = field(metadata={"help": ("Filename for saving sample with maximum number of tokens.")})
+    max_tokens_file: str = field(metadata={"help": "Filename for saving sample with maximum number of tokens."})
 
 
 @dataclass

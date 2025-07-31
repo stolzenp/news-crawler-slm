@@ -228,9 +228,9 @@ def evaluate_json(prediction, gold_data):
 def compute_final_json_metrics(results, sample_amount):
     """Computes final JSON evaluation metrics: Precision, Recall, F1 Score, Valid-JSON rate."""
 
-    precision = results["TP"] / (results["TP"] + results["FP"])
-    recall = results["TP"] / (results["TP"] + results["FN"])
-    f1_score = 2 * precision * recall / (precision + recall)
+    precision = results["TP"] / (results["TP"] + results["FP"]) if (results["TP"] + results["FP"]) > 0 else 0.0
+    recall = results["TP"] / (results["TP"] + results["FN"]) if (results["TP"] + results["FN"]) > 0 else 0.0
+    f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
     valid_json_rate = results["valid_json"] / sample_amount
 
     return {"Precision": precision, "Recall": recall, "F1-Score": f1_score, "Valid-JSON Rate": valid_json_rate}
@@ -369,7 +369,7 @@ def evaluate_model(
             mean = np.mean(values) if values else 0.0
         mean_metrics[metric] = mean
 
-    if target_column == "json":
+    if target_column == "json" and valid_json_count > 0:
         # get final aggregated JSON metrics and add them to mean metrics
         final_json_metrics = compute_final_json_metrics(aggregated_json_metrics, sample_amount=len(dataset))
         mean_metrics.update(final_json_metrics)
