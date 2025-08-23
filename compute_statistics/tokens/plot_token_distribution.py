@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     for column in columns:
         print(f"Plotting histogram for '{column}'...")
-        column_token_counts = get_token_counts_for_column(column, stats_file)
+        column_token_counts = get_token_counts_for_column(stats_file, column)
 
         # calculating mean and median
         mean = float(np.mean(column_token_counts))
