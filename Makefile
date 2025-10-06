@@ -23,7 +23,7 @@ format:
 	black .
 
 lint:
-	ruff .
+	ruff check . --fix
 
 precommit-init:
 	pre-commit install

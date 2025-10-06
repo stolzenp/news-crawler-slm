@@ -7,5 +7,5 @@ exclude = '''
 
 [tool.ruff]
 line-length = 120
-extend-select = ["I", "E", "F", "W", "B"]  # isort + pyflakes + some flake8 + bugbear
+lint.extend-select = ["I", "E", "F", "W", "B"]  # isort + pyflakes + some flake8 + bugbear
 exclude = ["build", "dist", ".venv", "unsloth_compiled_cache"]
