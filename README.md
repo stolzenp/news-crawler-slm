@@ -80,7 +80,7 @@ python -m model_training.finetune_model
 python -m evaluation.evaluate_model
 ```
 
-## 🛠️ Configuration
+## Configuration
 
 All settings are managed in the `config.json` file (in the project root).
 
