@@ -12,7 +12,7 @@ def get_token_counts_for_column(file_path, column_name):
     column_token_counts = []
 
     # look for the section related to the specified column
-    column_section = re.search(f"Statistics for '{column_name}':(.*?)(?=Statistics for|$)", content, re.DOTALL)
+    column_section = re.search(f"Statistics for '{column_name}'(.*?)(?=Statistics for|$)", content, re.DOTALL)
 
     if column_section:
         # extract the token distribution section for the column
