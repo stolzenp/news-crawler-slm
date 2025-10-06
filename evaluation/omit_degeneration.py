@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import FuncFormatter
 
 from common.utils import get_args_from_config
+from evaluation.evaluate_model import compute_final_json_metrics
 
 
 def repetition_severity_ratio(text, n=5) -> float:
@@ -30,7 +31,15 @@ def repetition_severity_ratio(text, n=5) -> float:
 
 
 def exclude_degeneration_results(
-    input_path, output_path, degen_path, mean_output_path, histogram_path, repetition_threshold=0.1, n_grams_size=5
+    input_path,
+    output_path,
+    degen_path,
+    degen_distribution_path,
+    mean_output_path,
+    std_output_path,
+    histogram_path,
+    repetition_threshold=0.1,
+    n_grams_size=5,
 ):
     """Filters out degeneration results from metrics results and creates a histogram based on a repetition ratio."""
 
@@ -101,7 +110,7 @@ def exclude_degeneration_results(
     # get all numerical attributes from remaining results
     numeric_attributes = [key for obj in filtered_data for key, value in obj.items() if isinstance(value, (int, float))]
 
-    # calculate means for each numerical attribute
+    # calculate mean and standard deviation for each numerical attribute
     if filtered_data:
 
         # save filtered results
@@ -110,12 +119,28 @@ def exclude_degeneration_results(
 
         print(f"Filtered results with no degeneration saved to {output_path}\n")
 
-        # get new means for each attribute
+        # get new mean and standard deviation for each attribute
         means = {}
+        stds = {}
         for attr in numeric_attributes:
+            if attr in ["TP", "FP", "FN", "valid_json"]:
+                continue
             values = [obj[attr] for obj in filtered_data if attr in obj]
-            if values:
-                means[attr] = sum(values) / len(values)
+
+            if values:  # only compute if non-empty
+                mean = np.mean(values)
+                std = np.std(values)
+            else:
+                mean = 0.0
+                std = 0.0
+            means[attr] = mean
+            stds[attr] = std
+
+        # calculate new final JSON metrics for JSON outputs
+        if "valid_json" in numeric_attributes:
+            final_json_metric_means, final_json_metric_stds = compute_final_json_metrics(filtered_data)
+            means.update(final_json_metric_means)
+            stds.update(final_json_metric_stds)
 
         # save new mean values
         with open(mean_output_path, "w", encoding="utf-8") as f:
@@ -126,6 +151,23 @@ def exclude_degeneration_results(
                 print(message)
 
         print(f"New mean values saved to {mean_output_path}\n")
+
+        # save new standard deviation values
+        with open(std_output_path, "w", encoding="utf-8") as f:
+            print("Standard deviation values for filtered results:\n")
+            for metric, std_value in stds.items():
+                message = f"{metric} std: {std_value}\n"
+                f.write(message)
+                print(message)
+
+        print(f"New standard deviation values saved to {std_output_path}\n")
+
+        # save distribution of degenerated outputs
+        with open(degen_distribution_path, "w", encoding="utf-8") as f:
+            f.write("Degenerate outputs: " + str(degen_count) + "\n")
+            f.write("Non-degenerate outputs: " + str(len(filtered_data)) + "\n")
+
+        print(f"Degeneration distribution saved to {degen_distribution_path}\n")
 
     else:
         print("No elements remain after filtering.")
@@ -181,10 +223,20 @@ if __name__ == "__main__":
     # set output paths
     output_file = f"{results_dir}/nodegen_{raw_metrics_file}"
     degen_file = f"{results_dir}/degen_{raw_metrics_file}"
+    degen_distribution_file = f"{results_dir}/degen_distribution.txt"
     output_means_file = output_file.replace("results.json", "means.txt")
+    output_stds_file = output_file.replace("results.json", "stds.txt")
     plot_file = output_file.replace("results.json", f"repetition_hist_n{n_grams}.png")
 
     # filter out degeneration results
     exclude_degeneration_results(
-        input_file, output_file, degen_file, output_means_file, plot_file, rep_threshold, n_grams
+        input_file,
+        output_file,
+        degen_file,
+        degen_distribution_file,
+        output_means_file,
+        output_stds_file,
+        plot_file,
+        rep_threshold,
+        n_grams,
     )

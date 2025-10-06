@@ -225,15 +225,45 @@ def evaluate_json(prediction, gold_data):
     return field_scores
 
 
-def compute_final_json_metrics(results, sample_amount):
-    """Computes final JSON evaluation metrics: Precision, Recall, F1 Score, Valid-JSON rate."""
+def compute_final_json_metrics(results):
+    """Computes Valid-JSON rate and mean and standard deviation for final JSON evaluation metrics:
+    Precision, Recall, F1 Score."""
 
-    precision = results["TP"] / (results["TP"] + results["FP"]) if (results["TP"] + results["FP"]) > 0 else 0.0
-    recall = results["TP"] / (results["TP"] + results["FN"]) if (results["TP"] + results["FN"]) > 0 else 0.0
-    f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
-    valid_json_rate = results["valid_json"] / sample_amount
+    scores = {"Precision": [], "Recall": [], "F1-Score": [], "valid_json": []}
 
-    return {"Precision": precision, "Recall": recall, "F1-Score": f1_score, "Valid-JSON Rate": valid_json_rate}
+    for result in results:
+        # only compute metrics for valid JSON outputs
+        if result.get("valid_json", 0) == 1:
+            precision = result["TP"] / (result["TP"] + result["FP"]) if (result["TP"] + result["FP"]) > 0 else 0.0
+            recall = result["TP"] / (result["TP"] + result["FN"]) if (result["TP"] + result["FN"]) > 0 else 0.0
+            f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+
+            scores["Precision"].append(precision)
+            scores["Recall"].append(recall)
+            scores["F1-Score"].append(f1_score)
+
+        scores["valid_json"].append(result["valid_json"])
+
+    # get means of final JSON metrics
+    mean_precision = np.mean(scores["Precision"])
+    mean_recall = np.mean(scores["Recall"])
+    mean_f1_score = np.mean(scores["F1-Score"])
+    valid_json_rate = np.mean(scores["valid_json"])
+
+    # get standard deviation of final JSON metrics
+    std_precision = np.std(scores["Precision"])
+    std_recall = np.std(scores["Recall"])
+    std_f1_score = np.std(scores["F1-Score"])
+
+    mean_metrics = {
+        "Precision": mean_precision,
+        "Recall": mean_recall,
+        "F1-Score": mean_f1_score,
+        "Valid-JSON Rate": valid_json_rate,
+    }
+    std_metrics = {"Precision": std_precision, "Recall": std_recall, "F1-Score": std_f1_score}
+
+    return mean_metrics, std_metrics
 
 
 def compute_inference_metrics(
@@ -283,7 +313,8 @@ def evaluate_model(
     log_to_wandb=False,
     wandb_step=0,
 ):
-    """Evaluates a model on a dataset and saves results to a JSON file and mean scores to a text file."""
+    """Evaluates a model on a dataset and saves results to a JSON file
+    and mean and standard deviation scores to a text file."""
 
     assert compute_ppl or compute_inf, "At least one of compute_ppl or compute_inf must be True."
 
@@ -308,8 +339,6 @@ def evaluate_model(
     results = []
 
     # keep track of JSON-specific metrics
-    aggregated_json_metrics = {"TP": 0, "FP": 0, "FN": 0, "valid_json": 0}
-    body_metric_sums = {}
     valid_json_count = 0
 
     # compute metrics for each test sample
@@ -335,59 +364,61 @@ def evaluate_model(
             # update result_dict with all metrics
             result.update(inf_metrics)
 
-            if target_column == "json":
-                # accumulate JSON metrics for final scores
-                for key in aggregated_json_metrics:
-                    aggregated_json_metrics[key] += inf_metrics.get(key, 0)
-
-                # accumulate body_* metrics only for valid JSON
-                if inf_metrics.get("valid_json", 0) == 1:
-                    valid_json_count += 1
-                    for k, v in inf_metrics.items():
-                        if k.startswith("body_") and isinstance(v, (int, float)):
-                            body_metric_sums[k] = body_metric_sums.get(k, 0) + v
+            if target_column == "json" and inf_metrics.get("valid_json", 0) == 1:
+                valid_json_count += 1
 
         results.append(result)
 
     # get all metric names from results
-    metric_names = set()
+    text_metric_names = set()
     for result in results:
-        metric_names.update(result.keys())
+        text_metric_names.update(result.keys())
 
     # exclude non-metrics and aggregated fields
-    non_metrics = {"html", f"{target_column}_gold", "inference_output", "TP", "FP", "FN", "valid_json"}
-    metric_names = [name for name in metric_names if name not in non_metrics]
+    non_text_metrics = {"html", f"{target_column}_gold", "inference_output", "TP", "FP", "FN", "valid_json"}
+    text_metric_names = [name for name in text_metric_names if name not in non_text_metrics]
 
     mean_metrics = {}
+    std_metrics = {}
 
     # calculate means for each metric
-    for metric in metric_names:
+    for metric in text_metric_names:
         values = [r[metric] for r in results if metric in r]
-        if metric.startswith("body_") and valid_json_count > 0:
-            mean = body_metric_sums[metric] / valid_json_count
+
+        if values:  # only compute if non-empty
+            mean = np.mean(values)
+            std = np.std(values)
         else:
-            mean = np.mean(values) if values else 0.0
+            mean, std = 0.0, 0.0
+
         mean_metrics[metric] = mean
+        std_metrics[metric] = std
 
     if target_column == "json" and valid_json_count > 0:
-        # get final aggregated JSON metrics and add them to mean metrics
-        final_json_metrics = compute_final_json_metrics(aggregated_json_metrics, sample_amount=len(dataset))
-        mean_metrics.update(final_json_metrics)
+        # get final JSON metrics and their means and standard deviations
+        final_json_mean_metrics, final_json_std_metrics = compute_final_json_metrics(results)
+        mean_metrics.update(final_json_mean_metrics)
+        std_metrics.update(final_json_std_metrics)
 
     if log_to_wandb:
-        wandb.log(mean_metrics, step=wandb_step)
+        log_mean_metrics = {key + "/mean": value for key, value in mean_metrics.items()}
+        log_std_metrics = {key + "/std": value for key, value in std_metrics.items()}
 
-    return results, mean_metrics
+        wandb.log(log_mean_metrics, step=wandb_step)
+        wandb.log(log_std_metrics, step=wandb_step)
+
+    return results, mean_metrics, std_metrics
 
 
-def save_results_and_means(results, mean_metrics, output_dir, filename_prefix="all_metrics"):
-    """Saves results and mean metrics to a JSON file and a text file."""
+def save_results_and_means(results, mean_metrics, std_metrics, output_dir, filename_prefix="all_metrics"):
+    """Saves results, mean and standard deviation metrics to a JSON file and a text file."""
 
     # create directories if needed
     os.makedirs(output_dir, exist_ok=True)
 
     output_file = f"{output_dir}/{filename_prefix}_results.json"
     means_output_file = f"{output_dir}/{filename_prefix}_means.txt"
+    stds_output_file = f"{output_dir}/{filename_prefix}_std.txt"
 
     # save results to a JSON file
     with open(output_file, "w") as f:
@@ -401,6 +432,14 @@ def save_results_and_means(results, mean_metrics, output_dir, filename_prefix="a
             f.write(message)
             print(message)
     print(f"Mean values saved to {means_output_file}")
+
+    # save stds to a text file
+    with open(stds_output_file, "w") as f:
+        for metric_name, std in std_metrics.items():
+            message = f"{metric_name}: {std}\n"
+            f.write(message)
+            print(message)
+    print(f"Standard deviation values saved to {stds_output_file}")
 
 
 def main():
@@ -469,7 +508,7 @@ def main():
 
     wandb.init(project=wandb_project, entity=wandb_entity, name=wandb_run_name)
 
-    results, mean_metrics = evaluate_model(
+    results, mean_metrics, std_metrics = evaluate_model(
         dataset, model, tokenizer, target, max_generation_length, args.perplexity, args.inference, wandb_flag
     )
 
@@ -485,7 +524,7 @@ def main():
         output_dir = f"{output_dir}/{split}"
 
     # save results and mean metrics to a JSON file and a text file
-    save_results_and_means(results, mean_metrics, output_dir, filename_prefix)
+    save_results_and_means(results, mean_metrics, std_metrics, output_dir, filename_prefix)
 
 
 if __name__ == "__main__":

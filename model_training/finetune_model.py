@@ -162,9 +162,9 @@ class MetricAccumulator:
         self.body_levenshtein = 0
         self.body_damerau = 0
         self.body_jaro_winkler = 0
-        self.tp = 0
-        self.fp = 0
-        self.fn = 0
+        self.precision = 0
+        self.recall = 0
+        self.f1 = 0
         self.valid_json_count = 0
         self.num_samples = 0
 
@@ -195,9 +195,12 @@ class MetricAccumulator:
                 self.body_levenshtein += inf_metrics.get("body_Levenshtein", 0)
                 self.body_damerau += inf_metrics.get("body_Damerau", 0)
                 self.body_jaro_winkler += inf_metrics.get("body_Jaro-Winkler", 0)
-                self.tp += inf_metrics.get("TP", 0)
-                self.fp += inf_metrics.get("FP", 0)
-                self.fn += inf_metrics.get("FN", 0)
+
+                json_scores, _ = compute_final_json_metrics(inf_metrics)
+
+                self.precision += json_scores.get("Precision", 0)
+                self.recall += json_scores.get("Recall", 0)
+                self.f1 += json_scores.get("F1-Score", 0)
 
     def compute(self):
 
@@ -218,15 +221,6 @@ class MetricAccumulator:
                 result["valid_json_count"] = 0
                 return result
 
-            json_scores = {
-                "TP": self.tp,
-                "FP": self.fp,
-                "FN": self.fn,
-                "valid_json": self.valid_json_count,
-            }
-
-            final_json_scores = compute_final_json_metrics(json_scores, self.num_samples)
-
             json_results = {
                 "body_Rouge-L": self.body_rouge_l / self.valid_json_count,
                 "body_BLEU": self.body_bleu / self.valid_json_count,
@@ -234,7 +228,10 @@ class MetricAccumulator:
                 "body_Levenshtein": self.body_levenshtein / self.valid_json_count,
                 "body_Damerau": self.body_damerau / self.valid_json_count,
                 "body_Jaro-Winkler": self.body_jaro_winkler / self.valid_json_count,
-                **final_json_scores,
+                "Precision": self.precision / self.valid_json_count,
+                "Recall": self.recall / self.valid_json_count,
+                "F1-Score": self.f1 / self.valid_json_count,
+                "Valid-JSON Rate": self.valid_json_count / self.num_samples,
             }
 
             result.update(json_results)
