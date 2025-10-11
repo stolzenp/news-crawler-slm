@@ -195,6 +195,10 @@ def evaluate_json(prediction, gold_data):
             body_metrics = {f"body_{key}": value for key, value in body_metrics.items()}
             field_scores.update(body_metrics)
 
+        # punish hallucination
+        elif gold_value is None and pred_value is not None:
+            field_scores["FP"] += 1
+
         # punish if types do not match (missed correct type (FN) and predicted wrong type (FP))
         elif type(gold_value) != type(pred_value):
             field_scores["FN"] += 1
@@ -208,10 +212,6 @@ def evaluate_json(prediction, gold_data):
                 field_scores["FP"] += 1
             else:
                 field_scores["TP"] += 1
-
-        # punish hallucination
-        elif gold_value is None and pred_value is not None:
-            field_scores["FP"] += 1
 
         # punish incorrect value (missed correct value (FN) and predicted wrong value (FP))
         elif pred_value != gold_value:
