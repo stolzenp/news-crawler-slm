@@ -196,7 +196,7 @@ class MetricAccumulator:
                 self.body_damerau += inf_metrics.get("body_Damerau", 0)
                 self.body_jaro_winkler += inf_metrics.get("body_Jaro-Winkler", 0)
 
-                json_scores, _ = compute_final_json_metrics(inf_metrics)
+                json_scores, _ = compute_final_json_metrics([inf_metrics])
 
                 self.precision += json_scores.get("Precision", 0)
                 self.recall += json_scores.get("Recall", 0)
